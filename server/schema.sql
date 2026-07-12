@@ -9,7 +9,9 @@ CREATE TABLE IF NOT EXISTS leads (
   service VARCHAR(120),
   message TEXT,
   source VARCHAR(80) DEFAULT 'website',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_leads_created_at (created_at)
 );
 
 CREATE TABLE IF NOT EXISTS reviews (
@@ -38,16 +40,26 @@ CREATE TABLE IF NOT EXISTS blogs (
   id INT AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(220) NOT NULL,
   excerpt TEXT,
+  content MEDIUMTEXT,
   image_url TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_blogs_active_created (active, created_at)
 );
 
 CREATE TABLE IF NOT EXISTS testimonials (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(120) NOT NULL,
   company VARCHAR(160),
+  designation VARCHAR(160),
   rating INT DEFAULT 5,
-  review TEXT NOT NULL,
+  review TEXT,
+  profile_image TEXT,
+  logo_url TEXT,
+  video_title VARCHAR(220),
+  video_url TEXT,
+  display_order INT DEFAULT 0,
+  active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -55,7 +67,30 @@ CREATE TABLE IF NOT EXISTS services (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(160) NOT NULL,
   description TEXT,
-  active BOOLEAN DEFAULT TRUE
+  logo_url TEXT,
+  active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_services_name (name)
+);
+
+CREATE TABLE IF NOT EXISTS subscribers (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(160) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_subscribers_email (email)
+);
+
+CREATE TABLE IF NOT EXISTS partners (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  email VARCHAR(160) NOT NULL,
+  phone VARCHAR(40),
+  company VARCHAR(160),
+  service VARCHAR(160),
+  notes TEXT,
+  status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_partners_status_created (status, created_at)
 );
 
 CREATE TABLE IF NOT EXISTS page_views (

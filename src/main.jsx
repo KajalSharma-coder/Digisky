@@ -4,46 +4,88 @@ import "./styles.css";
 
 const API = import.meta.env.VITE_API_URL || "/api";
 
+function toGoogleCalendarDate(value) {
+  return new Date(value)
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
+}
+
+function buildGoogleCalendarUrl({
+  name,
+  email,
+  phone,
+  service,
+  message,
+  meetingDate,
+  meetingTime,
+}) {
+  if (!meetingDate || !meetingTime) return "";
+  const start = new Date(`${meetingDate}T${meetingTime}`);
+  if (Number.isNaN(start.getTime())) return "";
+
+  const end = new Date(start);
+  end.setMinutes(end.getMinutes() + 30);
+
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: `DigiSky Consultation${service ? ` - ${service}` : ""}`,
+    dates: `${toGoogleCalendarDate(start)}/${toGoogleCalendarDate(end)}`,
+    details: [
+      name && `Name: ${name}`,
+      email && `Email: ${email}`,
+      phone && `Phone: ${phone}`,
+      service && `Service: ${service}`,
+      message && `Message: ${message}`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    location: "DigiSky IT, Jaipur, Rajasthan",
+  });
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 const heroSlides = [
   {
     title: "WhatsApp Official API",
     text: "Verified WhatsApp automation for support, alerts, campaigns, and lead nurturing.",
     cta: "Learn More",
-    image:
-      "https://images.unsplash.com/photo-1611746872915-64382b5c76da?auto=format&fit=crop&w=1500&q=80",
+    image: "/images/watshapp-official-api.png",
     link: "#/services/whatsapp-official-api",
+    artworkOnly: true,
   },
   {
     title: "IVR Solutions",
     text: "Smart call routing, greetings, analytics, and recordings for professional call handling.",
     cta: "Learn More",
-    image:
-      "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1500&q=80",
+    image: "/images/ivr-solutions.png",
     link: "#/services/ivr-solutions",
+    artworkOnly: true,
   },
   {
     title: "RCS SMS",
     text: "Rich branded messaging with images, buttons, and interactive customer journeys.",
     cta: "Learn More",
-    image:
-      "https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&fit=crop&w=1500&q=80",
+    image: "/images/rcs-sms.png",
     link: "#/services/rcs-sms",
+    artworkOnly: true,
   },
   {
     title: "Voice Call Services",
     text: "Bulk voice calls, transactional alerts, and voice campaigns for business outreach.",
     cta: "Learn More",
-    image:
-      "https://images.unsplash.com/photo-1525182008055-f88b95ff7980?auto=format&fit=crop&w=1500&q=80",
+    image: "/images/crm-solutions.png",
     link: "#/services/voice-call-services",
+    artworkOnly: true,
   },
   {
     title: "Website Development",
     text: "Fast, responsive, SEO-friendly websites designed for credibility and lead generation.",
     cta: "View Portfolio",
-    image:
-      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1500&q=80",
+    image: "/images/website-development.png",
     link: "#/services/website-development",
+    artworkOnly: true,
   },
 ];
 
@@ -52,193 +94,552 @@ const serviceDetails = [
     slug: "whatsapp-official-api",
     name: "WhatsApp Official API",
     summary:
-      "Verified WhatsApp automation for support, alerts, campaigns, and lead nurturing.",
-    image:
-      "https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?auto=format&fit=crop&w=1500&q=80",
+      "Official Meta-approved WhatsApp Business Platform for multi-agent support, automation, campaigns, alerts, and CRM-driven customer engagement.",
+    image: "/images/watshapp.png",
     features: [
-      "Verified business profile",
-      "Chatbot and agent handover",
-      "Template campaign setup",
-      "CRM and website integrations",
+      "Multi-agent team inbox for simultaneous customer handling",
+      "Chatbot automation for FAQs, lead qualification, and 24/7 support",
+      "Bulk broadcast messaging for offers, updates, and announcements",
+      "Automated notifications for order confirmations, reminders, OTPs, shipping updates, and invoices",
+      "CRM, ERP, and website integrations for centralized customer communication",
+      "Campaign analytics with delivery, read, and click tracking",
+      "E-commerce integrations with Shopify, WooCommerce, Magento, and custom stores",
+      "Verified business account setup with Meta approval support",
+      "Rich media support for images, videos, PDFs, catalogs, buttons, and lists",
+      "API integration with websites, mobile apps, and custom software",
     ],
     benefits: [
-      "Higher response rates",
-      "Trusted customer communication",
-      "Automated follow-ups",
-      "Better support productivity",
+      "Official Meta-approved solution with strong delivery performance",
+      "Secure, reliable, and scalable messaging for growing businesses",
+      "Higher customer engagement with better open and response rates",
+      "Faster support and reduced manual workload for teams",
+      "Automated lead generation and personalized customer journeys",
+      "Stronger trust with verified business communication",
+      "24/7 engagement for support, reminders, and follow-ups",
+      "Improved sales conversion and customer retention",
+      "Enterprise-grade security with compliant business messaging",
+      "Ideal for e-commerce, healthcare, education, travel, hospitality, finance, retail, and service businesses",
     ],
-    pricing: ["Custom onboarding", "Template setup", "Usage-based messaging"],
+    pricing: [
+      "Meta message charges for marketing, utility, and authentication templates",
+      "Platform fees for shared inbox, chatbot, CRM, broadcast, analytics, and API access",
+      "Optional setup and integration support for onboarding and deployment",
+    ],
+    bestFor: [
+      "Real Estate",
+      "E-commerce",
+      "Healthcare",
+      "Education",
+      "Travel Agencies",
+      "Hotels",
+      "Finance",
+      "Insurance",
+      "Restaurants",
+      "Retail Stores",
+      "Automobile Dealers",
+      "Service Businesses",
+    ],
+    whyChoose: "Why Choose WhatsApp Official API?",
+    whyChooseDescription:
+      "Official Meta-approved platform for secure, scalable, and engaging customer communication.",
+    whyChoosePoints: [
+      "Meta Official Platform",
+      "Secure & Reliable",
+      "Scalable Messaging",
+      "Better Customer Engagement",
+      "High Open Rates",
+      "Automation Ready",
+      "CRM Compatible",
+      "Enterprise Grade Security",
+      "Multi-Agent Support",
+      "Easy API Integration",
+    ],
   },
   {
     slug: "ivr-solutions",
     name: "IVR Solutions",
     summary:
-      "Smart call routing, greetings, analytics, and recordings for professional call handling.",
-    image:
-      "https://images.unsplash.com/photo-1556745753-b2904692b3cd?auto=format&fit=crop&w=1500&q=80",
+      "Cloud-based phone system that automatically answers calls, routes to departments, and integrates with CRM for better customer support.",
+    image: "/images/ivr.png",
     features: [
-      "Multi-level IVR menus",
-      "Call routing",
-      "Call recording",
-      "Department-wise reporting",
+      "Multi-level IVR menus with custom routing options",
+      "100% cloud-based system with no hardware required",
+      "Smart call routing to right department or agent",
+      "Professional custom greetings with brand voice",
+      "Call recording for quality monitoring and training",
+      "Real-time analytics for call volume, missed calls, and agent performance",
+      "Multi-agent support from single business number",
+      "CRM integration for automatic customer data sync",
+      "Time-based routing for business hours, weekends, and holidays",
+      "Missed call alerts with instant notifications",
+      "Multi-language support for IVR menus",
+      "API integration with websites, mobile apps, ERP, and third-party software",
     ],
     benefits: [
-      "Faster customer routing",
-      "Professional caller experience",
-      "Reduced missed calls",
-      "Actionable call insights",
+      "24×7 automated call handling without manual intervention",
+      "Professional business image with branded IVR experience",
+      "Faster customer response and reduced waiting time",
+      "Lower operational costs with reduced manual workload",
+      "Improved customer satisfaction and experience",
+      "Never miss important business calls with smart routing",
+      "Easy scalability as your business grows",
+      "Better team productivity with organized call flows",
+      "Detailed call reports and actionable insights",
+      "Seamless CRM integration for unified customer view",
+      "Supports remote and distributed teams",
+      "Works reliably across India with 24/7 availability",
     ],
-    pricing: ["Custom setup", "Monthly support", "Call volume-based plan"],
+    pricing: [
+      "Custom setup and configuration",
+      "Monthly subscription based on features",
+      "Call volume-based pricing plans",
+      "CRM integration support optional",
+    ],
+    bestFor: [
+      "Real Estate",
+      "Hospitals & Clinics",
+      "Schools & Colleges",
+      "Hotels",
+      "Restaurants",
+      "Travel Agencies",
+      "E-commerce",
+      "Insurance",
+      "Finance",
+      "Automobile Dealers",
+      "Customer Support Centers",
+      "Startups & SMEs",
+    ],
+    whyChoose: "Why Choose Our IVR Solution",
+    whyChooseDescription:
+      "Experience professional, reliable, and scalable cloud-based call management.",
+    whyChoosePoints: [
+      "100% Cloud-Based",
+      "Easy Setup",
+      "Instant Call Routing",
+      "Real-Time Reports",
+      "Secure & Reliable",
+      "Multi-Agent Support",
+      "CRM & API Integration",
+      "Multi-Language Support",
+      "Works Across India",
+      "24×7 Availability",
+    ],
   },
   {
     slug: "rcs-sms",
     name: "RCS SMS",
     summary:
-      "Rich branded messaging with images, buttons, and interactive customer journeys.",
-    image:
-      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1500&q=80",
+      "Rich, verified, and interactive RCS business messaging with media, carousels, buttons, automation, analytics, and CRM/API integration.",
+    image: "/images/RCS.png",
     features: [
-      "Verified sender branding",
-      "Media-rich messages",
-      "CTA buttons",
-      "Campaign analytics",
+      "Rich media messaging to send images, videos, GIFs, PDFs, and high-quality content",
+      "Carousel messages to show multiple products or offers in a swipeable format",
+      "Interactive buttons for Call Now, Visit Website, Buy Now, Book Appointment, and Get Directions",
+      "Verified business profile with your business name, logo, and brand information",
+      "Location sharing with maps and location links to help customers navigate to your business",
+      "Delivery and read receipts to know when messages are delivered and read",
+      "Suggested replies and actions for one-tap customer responses",
+      "Chatbot integration to automate FAQs, lead capture, and customer support",
+      "CRM and API integration with your website, ERP, or custom software",
+      "Campaign analytics to track delivery, opens, clicks, and engagement",
+      "Secure business messaging through verified communication with enhanced user confidence",
     ],
     benefits: [
-      "Premium messaging experience",
-      "More clicks",
-      "Brand trust",
-      "Measurable campaigns",
+      "Rich and interactive customer experience",
+      "Higher engagement than traditional SMS",
+      "Increased click-through rates",
+      "Improved customer trust with verified branding",
+      "Better lead generation",
+      "Faster customer responses",
+      "Personalized marketing campaigns",
+      "Enhanced product showcase",
+      "Improved customer support",
+      "Real-time campaign insights",
+      "No separate app required on supported devices",
+      "Better brand visibility",
     ],
     pricing: [
-      "Custom campaign plan",
-      "Brand approval support",
-      "Usage-based pricing",
+      "Custom RCS campaign plan",
+      "Verified business setup support",
+      "Usage-based messaging pricing",
+      "Automation and integration package",
+    ],
+    bestFor: [
+      "E-commerce",
+      "Retail",
+      "Real Estate",
+      "Healthcare",
+      "Education",
+      "Banking & Finance",
+      "Travel & Hospitality",
+      "Automobile Dealers",
+      "Food Delivery",
+      "Insurance",
+      "Event Management",
+      "Service Businesses",
+    ],
+    whyChoose: "Why Choose Our RCS Messaging Solution?",
+    whyChooseDescription:
+      "Verified, rich, secure, and interactive messaging built for better engagement, stronger branding, automation, and measurable campaigns.",
+    whyChoosePoints: [
+      "Verified Business Messaging",
+      "Rich Images, Videos & Carousels",
+      "Interactive Call-to-Action Buttons",
+      "Detailed Campaign Analytics",
+      "Chatbot & Automation Ready",
+      "CRM & API Integration",
+      "Secure Business Communication",
+      "Fast Campaign Delivery",
+      "Scalable for Businesses of All Sizes",
+      "Dedicated Business Support",
     ],
   },
   {
-    slug: "voice-call-services",
-    name: "Voice Call Services",
+    slug: "text-sms-service",
+    name: "Text SMS Service",
     summary:
-      "Bulk voice calls, transactional alerts, and voice campaigns for business outreach.",
-    image:
-      "https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&w=1500&q=80",
+      "Bulk SMS platform for instant campaigns, secure OTP delivery, promotional messages, transactional alerts, scheduling, analytics, and API integration across India.",
+    image: "/images/text-sms.png",
     features: [
-      "Bulk voice campaigns",
-      "Transactional calls",
-      "Regional language support",
-      "Delivery reports",
+      "Bulk SMS campaigns for thousands of customers in just a few clicks",
+      "Secure OTP SMS for login, verification, and transactions",
+      "Promotional SMS for offers, discounts, products, and marketing campaigns",
+      "Transactional SMS for confirmations, receipts, reminders, shipping updates, and alerts",
+      "Contact management to import and organize customer lists with ease",
+      "Delivery reports to track message status and campaign performance in real time",
+      "Personalized SMS with customer names and custom fields",
+      "SMS scheduling to send campaigns at the most effective time",
+      "API integration with websites, mobile apps, CRM, ERP, and business software",
+      "Campaign analytics for delivery rates, response rates, and campaign success",
+      "Multi-user access for secure team campaign management",
+      "Nationwide coverage across India through major telecom networks",
     ],
     benefits: [
-      "Fast outreach",
-      "Strong local reach",
-      "Simple customer reminders",
-      "Campaign tracking",
+      "Instant customer communication",
+      "High delivery and open rates",
+      "Cost-effective marketing",
+      "Improve customer engagement",
+      "Fast OTP and notification delivery",
+      "Reduce manual communication",
+      "Increase sales and conversions",
+      "Easy CRM integration",
+      "Reliable business communication",
+      "Scalable for startups and enterprises",
+      "Better customer retention",
+      "Simple campaign management",
     ],
-    pricing: ["Custom route plan", "Volume-based calling", "Support package"],
+    pricing: [
+      "Affordable bulk SMS pricing",
+      "Volume-based campaign plans",
+      "OTP and transactional route options",
+      "API and support package",
+    ],
+    bestFor: [
+      "E-commerce",
+      "Banks & Financial Services",
+      "Hospitals & Clinics",
+      "Schools & Colleges",
+      "Real Estate",
+      "Retail Stores",
+      "Travel Agencies",
+      "Insurance Companies",
+      "Logistics",
+      "Restaurants",
+      "Service Businesses",
+      "Government Organizations",
+    ],
+    whyChoose: "Why Choose Our Bulk SMS Service?",
+    whyChooseDescription:
+      "Instant, secure, affordable, and scalable SMS communication for marketing, OTPs, alerts, and business notifications.",
+    whyChoosePoints: [
+      "Instant SMS Delivery",
+      "High Delivery Success Rate",
+      "Secure OTP Messaging",
+      "Real-Time Reports",
+      "Easy API Integration",
+      "Multi-User Dashboard",
+      "Cloud-Based Platform",
+      "24x7 Technical Support",
+      "Pan India Coverage",
+      "Affordable Pricing",
+    ],
   },
   {
     slug: "website-development",
     name: "Website Development",
     summary:
-      "Fast, responsive, SEO-friendly websites designed for credibility and lead generation.",
-    image:
-      "https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&w=1500&q=80",
+      "Custom, responsive, SEO-friendly, secure, and fast-loading websites built to grow your brand, capture leads, and support your business online.",
+    image: "/images/web-dev.png",
     features: [
-      "Responsive UI",
-      "SEO setup",
-      "Contact and lead forms",
-      "Performance optimization",
+      "Custom website design with unique, modern, and user-friendly layouts that reflect your brand",
+      "Responsive design optimized for desktops, tablets, and mobile devices",
+      "Fast loading speed with performance-optimized pages for a better user experience",
+      "SEO-friendly structure built with best practices to improve online visibility",
+      "E-commerce development with secure payment gateways, product catalogs, and order management",
+      "SSL security with HTTPS-enabled websites and secure data transmission",
+      "Easy content management for pages, blogs, products, and images with CMS options available",
+      "Contact forms and lead generation with inquiry forms, WhatsApp chat, and call buttons",
+      "Custom domain and hosting support for registration, setup, and website deployment",
+      "Analytics integration to track visitors, conversions, and website performance",
+      "Third-party integrations for payment gateways, CRM, WhatsApp API, email marketing, social media, and business tools",
+      "Ongoing maintenance with updates, backups, security monitoring, and technical support",
     ],
     benefits: [
-      "Better brand trust",
-      "More inquiries",
-      "Mobile-ready experience",
-      "Easy future scaling",
+      "Build a strong online presence",
+      "Increase customer trust and credibility",
+      "Generate more leads and sales",
+      "Reach customers 24x7",
+      "Improve brand visibility",
+      "Better search engine rankings",
+      "Mobile-friendly user experience",
+      "Easy content updates",
+      "Secure and reliable platform",
+      "Scalable as your business grows",
+      "Higher conversion rates",
+      "Professional business image",
     ],
-    pricing: ["Basic ₹9999", "Standard ₹19999", "Premium ₹49999"],
+    pricing: [
+      "Basic website plans",
+      "Business website packages",
+      "E-commerce development plans",
+      "Maintenance and support options",
+    ],
+    bestFor: [
+      "Startups",
+      "Small & Medium Businesses",
+      "E-commerce Stores",
+      "Real Estate Companies",
+      "Educational Institutes",
+      "Hospitals & Clinics",
+      "Restaurants & Cafes",
+      "Travel Agencies",
+      "Hotels",
+      "Corporate Businesses",
+      "Service Providers",
+      "Personal Portfolios",
+    ],
+    whyChoose: "Why Choose Our Website Development Services?",
+    whyChooseDescription:
+      "Modern, mobile-first, secure, SEO-optimized websites built for performance, lead generation, integrations, and long-term growth.",
+    whyChoosePoints: [
+      "Modern & Professional Designs",
+      "Mobile-First Development",
+      "Fast Loading Performance",
+      "SEO Optimized",
+      "Secure & Reliable",
+      "E-commerce Ready",
+      "API & CRM Integration",
+      "Analytics & Reporting",
+      "WhatsApp Integration",
+      "Ongoing Technical Support",
+    ],
   },
   {
-    slug: "software-development",
-    name: "Software Development",
+    slug: "crm-solutions",
+    name: "CRM Solutions",
     summary:
-      "Custom dashboards, portals, workflow automation, and business applications.",
-    image:
-      "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1500&q=80",
+      "Cloud-based CRM software to manage leads, customers, sales pipelines, follow-ups, support, team activity, automation, and analytics from one dashboard.",
+    image: "/images/crm.png",
     features: [
-      "Admin dashboards",
-      "Role-based portals",
-      "API integrations",
-      "Reports and exports",
+      "Lead management to capture, organize, and track leads from multiple sources",
+      "Contact management with customer details, communication history, and interactions in one place",
+      "Sales pipeline tracking from inquiry to deal closure",
+      "Task and follow-up reminders so teams never miss important customer conversations",
+      "WhatsApp integration to send and receive customer messages from the CRM",
+      "Email integration for customer emails, campaigns, and communication tracking",
+      "Call logging for inbound and outbound calls with complete call history",
+      "Reports and analytics for sales performance, team productivity, lead conversion, and revenue",
+      "Multi-user access with role-based permissions for sales teams, managers, and administrators",
+      "Document management for quotations, invoices, contracts, and customer documents",
+      "Workflow automation for lead assignments, follow-ups, notifications, and repetitive tasks",
+      "API integration with websites, ERP, accounting software, payment gateways, and business apps",
+      "Mobile access to manage leads and customers anytime, anywhere",
     ],
     benefits: [
-      "Less manual work",
-      "Centralized operations",
-      "Better reporting",
-      "Process automation",
+      "Increase sales conversions",
+      "Organize customer information",
+      "Improve customer relationships",
+      "Automate repetitive tasks",
+      "Respond faster to customer inquiries",
+      "Improve team collaboration",
+      "Get real-time sales insights",
+      "Reduce manual work",
+      "Improve customer retention",
+      "Increase employee productivity",
+      "Centralize business management",
+      "Scale easily for businesses of all sizes",
     ],
-    pricing: ["Discovery", "Custom quotation", "Maintenance plan"],
-  },
-  {
-    slug: "text-sms",
-    name: "Text SMS",
-    summary: "Reliable OTP, promotional, and transactional SMS campaigns.",
-    image:
-      "https://images.unsplash.com/photo-1596526131083-e8c633c948d2?auto=format&fit=crop&w=1500&q=80",
-    features: [
-      "OTP and alerts",
-      "Promotional campaigns",
-      "Delivery reports",
-      "Sender ID setup",
+    pricing: [
+      "Cloud-based CRM setup",
+      "Monthly subscription based on users and features",
+      "Custom workflow and automation package",
+      "API and integration support",
     ],
-    benefits: [
-      "Fast customer reach",
-      "Cost-effective reminders",
-      "Simple campaign tracking",
-      "Higher repeat engagement",
+    bestFor: [
+      "Business Owners",
+      "Sales Teams",
+      "Real Estate Companies",
+      "Insurance Agencies",
+      "Consultants",
+      "Service Businesses",
+      "Retail Stores",
+      "Startups",
+      "Corporate Teams",
+      "Digital Marketers",
+      "Education Institutes",
+      "Healthcare Providers",
     ],
-    pricing: ["Custom route plan", "Volume-based SMS", "Support package"],
-  },
-  {
-    slug: "studio-setup",
-    name: "Studio Setup",
-    summary:
-      "Complete audio-video studio planning, equipment, and installation.",
-    image:
-      "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&w=1500&q=80",
-    features: [
-      "Equipment planning",
-      "Lighting and sound setup",
-      "Installation support",
-      "Workflow training",
+    whyChoose: "Why Choose Our CRM Software?",
+    whyChooseDescription:
+      "Fast, secure, cloud-based CRM built for better lead management, customer relationships, automation, and team collaboration.",
+    whyChoosePoints: [
+      "Cloud-Based Access",
+      "Mobile Friendly",
+      "Secure Data Storage",
+      "Real-Time Analytics",
+      "WhatsApp & Email Integration",
+      "Call Tracking",
+      "Smart Automation",
+      "Easy API Integration",
+      "Multi-User Collaboration",
+      "Fast & Easy to Use",
     ],
-    benefits: [
-      "Professional production quality",
-      "Ready-to-use setup",
-      "Cleaner recording workflow",
-      "Long-term support",
-    ],
-    pricing: ["Site survey", "Custom quotation", "Installation package"],
   },
   {
     slug: "digital-visiting-card",
     name: "Digital Visiting Card",
     summary:
-      "Shareable business profiles with links, lead capture, and contact actions.",
+      "Modern virtual business card with QR code sharing, contact saving, social links, WhatsApp chat, maps, gallery, lead forms, payments, and analytics.",
     image:
-      "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?auto=format&fit=crop&w=1500&q=80",
+       "/images/dv.png",
     features: [
-      "NFC and QR sharing",
-      "Contact save button",
-      "Social links",
-      "Lead capture form",
+      "Professional business profile with name, company, designation, logo, and profile photo",
+      "One-tap contact saving for customers",
+      "QR code sharing to share your digital card instantly",
+      "Website and social media links for Facebook, Instagram, LinkedIn, YouTube, and more",
+      "WhatsApp click-to-chat for instant customer conversations",
+      "Google Maps integration with one-click navigation",
+      "Photo and video gallery to showcase products, services, or portfolio",
+      "Lead capture form to collect inquiries directly from the digital card",
+      "Payment links for UPI, Razorpay, Paytm, PhonePe, or bank details",
+      "Brochure and PDF downloads for company profiles, catalogs, price lists, and brochures",
+      "Visitor analytics to track views, clicks, and customer engagement",
+      "Custom branding with colors, fonts, logo, and layout matching your brand",
     ],
     benefits: [
-      "Modern first impression",
-      "Easy sharing",
-      "More profile visits",
-      "Better lead collection",
+      "Share instantly via QR code or link",
+      "Avoid printing costs",
+      "Use an environment-friendly solution",
+      "Keep business information always up to date",
+      "Edit details anytime",
+      "Increase customer engagement",
+      "Build a professional business image",
+      "Generate more leads",
+      "Make contact sharing simple",
+      "Improve brand visibility",
+      "Works on Android, iPhone, and desktop",
+      "Perfect for networking events and sales teams",
     ],
-    pricing: ["Basic card", "NFC card", "Premium branded card"],
+    pricing: [
+      "Digital card design and setup",
+      "QR code and shareable link creation",
+      "Custom branding package",
+      "Analytics and lead capture options",
+    ],
+    bestFor: [
+      "Business Owners",
+      "Sales Professionals",
+      "Real Estate Agents",
+      "Insurance Advisors",
+      "Doctors & Clinics",
+      "Lawyers",
+      "Consultants",
+      "Freelancers",
+      "Digital Marketers",
+      "Retail Stores",
+      "Startups",
+      "Corporate Teams",
+    ],
+    whyChoose: "Why Choose Our Digital Visiting Card?",
+    whyChooseDescription:
+      "Instant, mobile-friendly, secure, and fully customizable digital card experience for modern networking and lead generation.",
+    whyChoosePoints: [
+      "Instant Sharing",
+      "Mobile-Friendly Design",
+      "Fully Customizable",
+      "QR Code & Link Sharing",
+      "WhatsApp Integration",
+      "Google Maps Support",
+      "Visitor Analytics",
+      "Secure & Reliable",
+      "Quick Setup",
+      "Accessible Anywhere",
+    ],
+  },
+  {
+    slug: "studio-setup",
+    name: "Studio Setup",
+    summary:
+      "Complete professional studio setup for recording, live streaming, podcasting, webinars, and content production.",
+    image: "images/studio-setup.png",
+    features: [
+      "Professional camera setup for DSLR, mirrorless, PTZ, and webcam systems",
+      "Audio equipment installation with microphones, interfaces, mixers, and headphones",
+      "Studio lighting with softbox, LED panels, ring lights, RGB lighting, and custom layouts",
+      "Soundproofing and acoustic treatment to reduce noise and echo",
+      "Video recording setup for YouTube videos, courses, interviews, and webinars",
+      "Live streaming setup for YouTube, Facebook, Instagram, LinkedIn, Zoom, Microsoft Teams, and more",
+      "Editing workstation configuration for video editing and content production",
+      "Green screen setup for professional chroma key virtual productions",
+      "Software configuration for OBS Studio, vMix, streaming tools, editing software, and audio optimization",
+      "Multi-camera support for live streams and recordings",
+      "Studio consultation based on your budget and requirements",
+      "Complete installation, testing, and user training for your team",
+    ],
+    benefits: [
+      "Professional-quality video and audio",
+      "Improve brand image",
+      "Create engaging marketing content",
+      "Better online meetings and webinars",
+      "Smooth live streaming experience",
+      "High-quality podcast production",
+      "Increase audience engagement",
+      "Time-saving production workflow",
+      "Reliable equipment setup",
+      "Scalable for future upgrades",
+      "Technical support available",
+      "Ready-to-use studio solution",
+    ],
+    pricing: ["Studio consultation", "Custom setup quotation", "Installation and training package"],
+    bestFor: [
+      "YouTubers",
+      "Influencers",
+      "Digital Creators",
+      "Schools & Coaching Institutes",
+      "Corporate Offices",
+      "Podcasters",
+      "Churches & Religious Organizations",
+      "Event Companies",
+      "Marketing Agencies",
+      "Media Houses",
+      "Startups",
+      "Businesses",
+    ],
+    whyChoose: "Why Choose Our Studio Setup Services?",
+    whyChooseDescription:
+      "End-to-end studio planning, premium installation, and practical training for a ready-to-use production environment.",
+    whyChoosePoints: [
+      "End-to-End Studio Design",
+      "Premium Equipment Installation",
+      "Professional Lighting Solutions",
+      "Acoustic & Soundproofing Expertise",
+      "Live Streaming Ready",
+      "Editing & Production Setup",
+      "Expert Installation & Training",
+      "Quick Deployment",
+      "Reliable & Scalable Solutions",
+      "Ongoing Technical Support",
+    ],
   },
 ];
 
@@ -268,13 +669,13 @@ const projects = [
 ];
 
 const logos = [
-  "Orbit",
-  "FinEdge",
-  "EduSpark",
-  "BluePeak",
-  "Studio Hive",
-  "Jaipur Care",
-  "MarketPro",
+  { name: "Orbit", mark: "O" },
+  { name: "FinEdge", mark: "FE" },
+  { name: "EduSpark", mark: "ES" },
+  { name: "BluePeak", mark: "BP" },
+  { name: "Studio Hive", mark: "SH" },
+  { name: "Jaipur Care", mark: "JC" },
+  { name: "MarketPro", mark: "MP" },
 ];
 
 const pricingRows = [
@@ -282,74 +683,6 @@ const pricingRows = [
   ["WhatsApp API", "Custom", "Custom", "Custom"],
   ["IVR", "Custom", "Custom", "Custom"],
   ["RCS SMS", "Custom", "Custom", "Custom"],
-  ["Software Development", "Custom", "Custom", "Custom"],
-];
-
-const fallbackReviews = [
-  {
-    name: "Rahul Mehta",
-    company: "FleetOps Logistics",
-    role: "Head of Operations",
-    rating: 5,
-    review:
-      "DigiSky delivered a polished website and WhatsApp lead flow that improved our customer response time within one week.",
-  },
-  {
-    name: "Sana Iyer",
-    company: "MetroCare Clinics",
-    role: "Director of Growth",
-    rating: 5,
-    review:
-      "The digital experience they built feels premium and steady. We now capture leads efficiently from both website and messaging channels.",
-  },
-  {
-    name: "Nikhil Singh",
-    company: "BrightWave Retail",
-    role: "Business Head",
-    rating: 5,
-    review:
-      "Their automation setup reduced our support load and made campaign follow-up far more reliable. The team delivered on time with clear communication.",
-  },
-  {
-    name: "Priya Joshi",
-    company: "EduPoint Academy",
-    role: "Founder",
-    rating: 5,
-    review:
-      "The website, booking system, and contact workflows all came together smoothly. We received more qualified enquiries from day one.",
-  },
-  {
-    name: "Amit Desai",
-    company: "NexaTech Solutions",
-    role: "CTO",
-    rating: 5,
-    review:
-      "DigiSky built a strong technology flow for our support and campaigns. The final delivery feels professional and easy to manage.",
-  },
-  {
-    name: "Mira Rao",
-    company: "Fusion Events",
-    role: "Operations Manager",
-    rating: 5,
-    review:
-      "Their service was detail-oriented and practical. We now have a much better way to connect clients with event bookings.",
-  },
-  {
-    name: "Karan Patel",
-    company: "Prime Digital",
-    role: "Marketing Lead",
-    rating: 5,
-    review:
-      "The campaigns and website updates are modern and fast. The team translated our business needs into a professional delivery.",
-  },
-  {
-    name: "Nisha Gupta",
-    company: "Aster Advisory",
-    role: "Client Experience Head",
-    rating: 5,
-    review:
-      "DigiSky helped us launch a strong customer engagement strategy with minimal overhead. The execution was smooth and highly professional.",
-  },
 ];
 
 function postJson(path, data, token) {
@@ -385,6 +718,103 @@ function deleteJson(path, token) {
   });
 }
 
+function sendJson(path, method, data, token) {
+  return fetch(`${API}${path}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(data),
+  }).then(async (res) => {
+    if (!res.ok) {
+      throw new Error(
+        (await res.json().catch(() => ({}))).message || "Request failed",
+      );
+    }
+    return res.json().catch(() => ({}));
+  });
+}
+
+function getJson(path, token) {
+  return fetch(`${API}${path}`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  }).then(async (res) => {
+    if (!res.ok) {
+      throw new Error(
+        (await res.json().catch(() => ({}))).message || "Request failed",
+      );
+    }
+    return res.json().catch(() => ({}));
+  });
+}
+
+function rowsFrom(data) {
+  return Array.isArray(data) ? data : data?.rows || [];
+}
+
+function metaFrom(data) {
+  return data?.meta || { total: rowsFrom(data).length, page: 1, limit: 10, pages: 1 };
+}
+
+function buildQuery(params) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") query.set(key, value);
+  });
+  const output = query.toString();
+  return output ? `?${output}` : "";
+}
+
+function getVideoEmbed(url = "") {
+  const raw = String(url).trim();
+  if (!raw) return null;
+
+  if (/^[a-zA-Z0-9_-]{11}$/.test(raw)) {
+    return {
+      platform: "YouTube Shorts",
+      src: `https://www.youtube.com/embed/${raw}`,
+    };
+  }
+
+  try {
+    const parsed = new URL(raw);
+    const host = parsed.hostname.replace(/^www\./, "");
+    let id = "";
+
+    if (host === "youtu.be") {
+      id = parsed.pathname.split("/").filter(Boolean)[0] || "";
+    } else if (host.includes("youtube.com")) {
+      const parts = parsed.pathname.split("/").filter(Boolean);
+      id =
+        parsed.searchParams.get("v") ||
+        (["shorts", "embed"].includes(parts[0]) ? parts[1] : "");
+    }
+
+    if (id) {
+      return {
+        platform: "YouTube Shorts",
+        src: `https://www.youtube.com/embed/${id}`,
+      };
+    }
+
+  } catch {
+    const match = raw.match(
+      /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([a-zA-Z0-9_-]{11})/,
+    );
+    if (match) {
+      return {
+        platform: "YouTube Shorts",
+        src: `https://www.youtube.com/embed/${match[1]}`,
+      };
+    }
+  }
+
+  return null;
+}
+
 function App() {
   const [route, setRoute] = useState(location.hash.replace("#", "") || "/");
   const [dark, setDark] = useState(false);
@@ -403,12 +833,67 @@ function App() {
   }, [dark]);
 
   useEffect(() => {
+    if (route !== "/contact") return;
+    const scrollTimer = setTimeout(
+      () =>
+        document
+          .getElementById("contact")
+          ?.scrollIntoView({ behavior: "smooth" }),
+      80,
+    );
+    return () => clearTimeout(scrollTimer);
+  }, [route]);
+
+  useEffect(() => {
     fetch(`${API}/track`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: route }),
     }).catch(() => {});
   }, [route]);
+
+  useEffect(() => {
+    const revealItems = document.querySelectorAll(
+      [
+        ".reveal",
+        ".section",
+        ".grid > *",
+        ".services-cards-grid > *",
+        ".steps > *",
+        ".testimonial-track > *",
+        ".testimonial-video-track > *",
+        ".service-pill",
+        ".best-for-badge",
+        ".pricing-chip",
+        ".admin-grid > *",
+        ".footer-grid > *",
+      ].join(","),
+    );
+
+    if (!("IntersectionObserver" in window)) {
+      revealItems.forEach((item) => item.classList.add("is-visible"));
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { rootMargin: "0px 0px -8% 0px", threshold: 0.12 },
+    );
+
+    revealItems.forEach((item, index) => {
+      item.style.setProperty("--reveal-delay", `${(index % 8) * 70}ms`);
+      observer.observe(item);
+    });
+
+    return () => observer.disconnect();
+  }, [route, loaded]);
 
   const serviceSlug = route.startsWith("/services/")
     ? route.split("/").pop()
@@ -429,12 +914,14 @@ function App() {
       <main>
         {service ? (
           <ServicePage service={service} />
-        ) : route === "/booking" ? (
-          <BookingPage />
+        ) : route === "/booking" || route === "/become-a-partner" ? (
+          <PartnerPage />
         ) : route === "/admin" ? (
           <AdminPage />
         ) : route === "/privacy-policy" ? (
           <PrivacyPolicyPage />
+        ) : route === "/terms-and-conditions" ? (
+          <TermsConditionsPage />
         ) : (
           <HomePage />
         )}
@@ -450,8 +937,8 @@ function Header({ dark, setDark, menuOpen, setMenuOpen }) {
   const closeMenu = () => setMenuOpen(false);
   return (
     <header className="navbar">
-      <a className="brand" href="#/" aria-label="DigiSky IT home">
-        <span>DS</span>DigiSky IT
+      <a className="brand" href="#/" aria-label="DigiSky home">
+        <img src="/images/digisky-logo.svg" alt="" />DigiSky
       </a>
       <button
         className="menu-toggle"
@@ -480,26 +967,14 @@ function Header({ dark, setDark, menuOpen, setMenuOpen }) {
             ))}
           </div>
         </div>
-        <a href="#/booking" onClick={closeMenu}>
-          Booking
-        </a>
-        <a
-          href="#/"
-          onClick={() => {
-            closeMenu();
-            setTimeout(
-              () =>
-                document
-                  .getElementById("contact")
-                  ?.scrollIntoView({ behavior: "smooth" }),
-              50,
-            );
-          }}
-        >
-          Contact
+        <a href="#/become-a-partner" onClick={closeMenu}>
+          Become a Partner
         </a>
         <a href="#/privacy-policy" onClick={closeMenu}>
           Privacy Policy
+        </a>
+        <a href="#/terms-and-conditions" onClick={closeMenu}>
+          Terms & Conditions
         </a>
         <button
           className="theme"
@@ -575,19 +1050,23 @@ function HomePage() {
     <>
       <section
         id="home"
-        className="hero"
+        className={`hero${currentSlide.artworkOnly ? " hero-artwork" : ""}`}
         style={{
-          backgroundImage: `linear-gradient(110deg, rgba(10,37,64,.9), rgba(0,102,255,.36)), url(${currentSlide.image})`,
+          backgroundImage: currentSlide.artworkOnly
+            ? `url(${currentSlide.image})`
+            : `linear-gradient(110deg, rgba(10,37,64,.9), rgba(0,102,255,.36)), url(${currentSlide.image})`,
         }}
       >
-        <div className="hero-content">
-          <p className="eyebrow">Enterprise technology partner</p>
-          <h1>{currentSlide.title}</h1>
-          <p>{currentSlide.text}</p>
-          <a className="btn" href={currentSlide.link}>
-            {currentSlide.cta}
-          </a>
-        </div>
+        {!currentSlide.artworkOnly && (
+          <div className="hero-content">
+            <p className="eyebrow">Enterprise technology partner</p>
+            <h1>{currentSlide.title}</h1>
+            <p>{currentSlide.text}</p>
+            <a className="btn" href={currentSlide.link}>
+              {currentSlide.cta}
+            </a>
+          </div>
+        )}
         <div className="hero-controls">
           <button
             onClick={() =>
@@ -615,17 +1094,49 @@ function HomePage() {
           ))}
         </div>
       </section>
-      <WhyChoose />
       <ServicesGrid />
+      <WhyChoose />
       <Stats />
       <TrustedLogos />
-      <AboutSection />
       <Testimonials testimonials={testimonials} />
       <ReviewForm />
       <Process />
       <Faq faqs={faqs} active={faq} setActive={setFaq} />
       <ContactSection />
     </>
+  );
+}
+
+function ServiceGraphic({ service }) {
+  const callouts = service.features;
+  const proofPoints = service.whyChoosePoints?.slice(0, 3) || service.benefits.slice(0, 3);
+
+  return (
+    <section className="section service-graphic-section reveal">
+      <div className="service-graphic-panel">
+        <div className="service-graphic-copy">
+          <p className="eyebrow">Service Graphic</p>
+          <h2>{service.name} workflow at a glance</h2>
+          <p>{service.summary}</p>
+          <div className="service-graphic-callouts">
+            {callouts.map((item, index) => (
+              <span key={item}>
+                <strong>{String(index + 1).padStart(2, "0")}</strong>
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="service-graphic-media">
+          <img src={service.image} alt={`${service.name} graphic`} loading="lazy" />
+          <div className="service-graphic-badges">
+            {proofPoints.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -671,22 +1182,38 @@ function WhyChoose() {
 }
 
 function ServicesGrid() {
+  const icons = {
+    "WhatsApp Official API": "💬",
+    "IVR Solutions": "☎️",
+    "RCS SMS": "✉️",
+    "Text SMS Service": "💬",
+    "Website Development": "🌐",
+    "CRM Solutions": "📊",
+    "Digital Visiting Card": "💳",
+    "Studio Setup": "🎙️",
+  };
+
   return (
     <section id="services" className="section services reveal">
       <div className="section-heading">
         <p className="eyebrow">Our services</p>
         <h2>Communication, software, and automation solutions</h2>
       </div>
-      <div className="grid three">
-        {allServices.map((service, index) => (
-          <article className="service-card" key={service.name}>
-            <Icon name={["✆", "⌁", "✉", "☎", "✦", "▣", "◇", "⌘", "⚙"][index]} />
-            <h3>{service.name}</h3>
-            <p>{service.summary}</p>
-            <a className="text-link" href={`#/services/${service.slug}`}>
-              View Details
-            </a>
-          </article>
+      <div className="services-cards-grid">
+        {allServices.map((service) => (
+          <a
+            href={`#/services/${service.slug}`}
+            className="service-card-link"
+            key={service.name}
+          >
+            <article className="service-card-with-icon">
+              <div className="service-icon-circle">
+                {icons[service.name] || "⚙"}
+              </div>
+              <h3>{service.name}</h3>
+              <p>{service.summary}</p>
+            </article>
+          </a>
         ))}
       </div>
     </section>
@@ -695,12 +1222,12 @@ function ServicesGrid() {
 
 function Stats() {
   return (
-    <section className="stats">
+    <section className="stats reveal">
       {[
-        ["500+", "Happy Clients"],
-        ["1000+", "Projects Completed"],
+        ["5000+", "Happy Clients"],
+        ["300+", "Projects Completed"],
         ["24/7", "Support"],
-        ["99%", "Client Satisfaction"],
+        ["95%", "Client Satisfaction"],
       ].map(([number, label]) => (
         <div key={label}>
           <strong>{number}</strong>
@@ -716,76 +1243,75 @@ function TrustedLogos() {
     <section className="section trusted reveal">
       <div className="section-heading">
         <p className="eyebrow">Trusted By</p>
-        <h2>Companies growing with DigiSky IT</h2>
+        <h2>Companies growing with DigiSky</h2>
       </div>
       <div className="logo-slider">
         {logos.concat(logos).map((logo, index) => (
-          <span key={`${logo}-${index}`}>{logo}</span>
+          <span
+            key={`${logo.name}-${index}`}
+            className="logo-item"
+            aria-label={logo.name}
+            title={logo.name}
+          >
+            <span className="logo-bubble">{logo.mark}</span>
+            <span className="logo-name">{logo.name}</span>
+          </span>
         ))}
       </div>
     </section>
   );
 }
 
-function AboutSection() {
-  return (
-    <section className="section split about reveal">
-      <div>
-        <p className="eyebrow">About DigiSky</p>
-        <h2>Technology that makes customer engagement simpler</h2>
-        <p>
-          DigiSky IT is a leading technology solutions provider offering
-          communication, automation, software development, website development,
-          and digital transformation services.
-        </p>
-        <ul>
-          <li>Verified communication and campaign systems</li>
-          <li>Custom websites, portals, and business software</li>
-          <li>Support-led delivery from planning to optimization</li>
-        </ul>
-        <a className="btn" href="#contact">
-          Talk To Our Team
-        </a>
-      </div>
-      <img
-        loading="lazy"
-        src="https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=1000&q=80"
-        alt="Professional team collaborating around a technology project"
-      />
-    </section>
-  );
-}
-
 function Testimonials({ testimonials }) {
-  const displayedReviews = testimonials.length ? testimonials : fallbackReviews;
+  const videoTestimonials = testimonials
+    .map((item) => ({ ...item, video: getVideoEmbed(item.video_url) }))
+    .filter((item) => item.video);
+
   return (
     <section id="testimonials" className="section testimonials reveal">
       <div className="section-heading">
-        <p className="eyebrow">Testimonials</p>
-        <h2>Professional client reviews with ratings</h2>
+        <p className="eyebrow">Video Testimonials</p>
+        <h2>Client stories in YouTube Shorts</h2>
       </div>
-      <div className="testimonial-track">
-        {displayedReviews.map((item, index) => (
-          <article className="testimonial" key={`${item.name}-${index}`}>
-            {item.logo_url ? (
-              <img
+      <div className="testimonial-video-track" aria-label="Video testimonials">
+        {videoTestimonials.map((item, index) => (
+          <article
+            className="testimonial-video-card"
+            key={`${item.video_url}-${index}`}
+          >
+            <div className="shorts-frame">
+              <iframe
+                title={`${item.name || "Client"} video testimonial`}
+                src={`${item.video.src}?rel=0&modestbranding=1`}
                 loading="lazy"
-                src={item.logo_url}
-                alt={`${item.company} logo`}
-                style={{ borderRadius: "4px", objectFit: "contain" }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
               />
-            ) : (
-              <img
-                loading="lazy"
-                src={`https://i.pravatar.cc/120?img=${index + 12}`}
-                alt={`${item.name} portrait`}
-              />
-            )}
-            <div className="stars">{"★".repeat(Number(item.rating || 5))}</div>
-            <p>"{item.review}"</p>
-            <strong>{item.name}</strong>
-            <span>{item.role || "Client"}</span>
-            <span>{item.company}</span>
+            </div>
+            <div className="video-testimonial-meta">
+              <div className="video-client-row">
+                {item.profile_image || item.logo_url ? (
+                  <img
+                    loading="lazy"
+                    src={item.profile_image || item.logo_url}
+                    alt={`${item.name || "Client"} profile`}
+                  />
+                ) : (
+                  <span aria-hidden="true">
+                    {(item.name || "C").slice(0, 1).toUpperCase()}
+                  </span>
+                )}
+                <div>
+                  <strong>{item.name || "Client"}</strong>
+                  <small>{item.company || "Company"}</small>
+                </div>
+              </div>
+              {item.designation && <span>{item.designation}</span>}
+              <div className="stars" aria-label={`${item.rating || 5} star rating`}>
+                {"★".repeat(Number(item.rating || 5))}
+              </div>
+              {item.review && <p>{item.review}</p>}
+            </div>
           </article>
         ))}
       </div>
@@ -963,15 +1489,20 @@ function Faq({ faqs, active, setActive }) {
 
 function ContactSection({ serviceName = "" }) {
   const [status, setStatus] = useState("");
+  const [calendarUrl, setCalendarUrl] = useState("");
   const submit = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form));
+    const calendarLink = buildGoogleCalendarUrl(data);
+    const bookingData = { ...data, notes: data.message };
     try {
-      await postJson("/leads", data);
-      setStatus("Thank you. Your request has been saved.");
+      await postJson("/bookings", bookingData);
+      setCalendarUrl(calendarLink);
+      setStatus("Thank you. Your meeting request has been saved.");
       form.reset();
     } catch (error) {
+      setCalendarUrl(calendarLink);
       setStatus(
         `Form is ready. Could not send request: ${error?.message || "API unavailable."}`,
       );
@@ -1017,10 +1548,32 @@ function ContactSection({ serviceName = "" }) {
               <option key={service.name}>{service.name}</option>
             ))}
           </select>
+          <input
+            name="meetingDate"
+            required
+            type="date"
+            aria-label="Preferred meeting date"
+          />
+          <input
+            name="meetingTime"
+            required
+            type="time"
+            aria-label="Preferred meeting time"
+          />
           <textarea name="message" rows="5" placeholder="Message" />
           <button className="btn" type="submit">
             Send Message
           </button>
+          {calendarUrl && (
+            <a
+              className="btn ghost calendar-link"
+              href={calendarUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Add to Google Calendar
+            </a>
+          )}
           {status && <p className="form-status">{status}</p>}
         </form>
       </div>
@@ -1046,52 +1599,69 @@ function ServicePage({ service }) {
   ];
   return (
     <>
-      <section
-        className="page-hero"
-        style={{
-          backgroundImage: `linear-gradient(110deg, rgba(10,37,64,.9), rgba(0,102,255,.42)), url(${service.image})`,
-        }}
-      >
-        <p className="eyebrow">Service Detail</p>
-        <h1>{service.name}</h1>
-        <p>{service.summary}</p>
-        <button
-          className="btn"
-          onClick={() =>
-            document
-              .getElementById("contact")
-              ?.scrollIntoView({ behavior: "smooth" })
-          }
-        >
-          Request Pricing
-        </button>
+      <ServiceGraphic service={service} />
+      <section className="section reveal">
+        <div className="service-showcase">
+          <article className="service-showcase-main">
+            <p className="eyebrow">
+              {service.whyChoose || "Why choose this service"}
+            </p>
+            <h2>
+              {service.whyChooseDescription ||
+                "Professional messaging that supports growth, service, and retention."}
+            </h2>
+            <p>
+              {service.whyChooseDescription
+                ? "Experience all the benefits of our solution designed to meet your business needs."
+                : "Bring customer conversations into one reliable channel with official automation, rich media, and measurable campaigns that work across support and sales."}
+            </p>
+            <div className="service-pill-list">
+              {(service.whyChoosePoints || service.benefits.slice(0, 4)).map(
+                (item) => (
+                  <span className="service-pill" key={item}>
+                    {item}
+                  </span>
+                ),
+              )}
+            </div>
+          </article>
+          <div className="service-showcase-side">
+            <article className="service-side-card">
+              <h3>Benefits</h3>
+              <ul>
+                {service.benefits.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+            <article className="service-side-card pricing-card">
+              <h3>Pricing approach</h3>
+              <div className="pricing-chip-row">
+                {service.pricing.map((item) => (
+                  <span className="pricing-chip" key={item}>
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </article>
+          </div>
+        </div>
       </section>
-      <section className="section detail-grid">
-        <article>
-          <h2>Features</h2>
-          <ul>
-            {service.features.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </article>
-        <article>
-          <h2>Benefits</h2>
-          <ul>
-            {service.benefits.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </article>
-        <article>
-          <h2>Pricing Plans</h2>
-          <ul>
-            {service.pricing.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </article>
-      </section>
+      {service.bestFor && (
+        <section className="section reveal">
+          <article className="best-for-section">
+            <p className="eyebrow">Best For</p>
+            <h2>Perfect for growing your business</h2>
+            <div className="best-for-grid">
+              {service.bestFor.map((item) => (
+                <span className="best-for-badge" key={item}>
+                  {item}
+                </span>
+              ))}
+            </div>
+          </article>
+        </section>
+      )}
       <Faq faqs={faqs} active={faq} setActive={setFaq} />
       <ContactSection serviceName={service.name} />
     </>
@@ -1115,7 +1685,7 @@ function PricingPage() {
           communication, automation, and software services.
         </p>
       </section>
-      <section className="section">
+      <section className="section reveal">
         <PricingTable />
         <div className="grid three pricing-cards">
           {["Basic", "Standard", "Premium"].map((plan, index) => (
@@ -1160,7 +1730,7 @@ function PortfolioPage() {
           automation, and operational clarity.
         </p>
       </section>
-      <section className="section">
+      <section className="section reveal">
         <ProjectGrid />
       </section>
       <ContactSection />
@@ -1168,22 +1738,19 @@ function PortfolioPage() {
   );
 }
 
-function BookingPage() {
+function PartnerPage() {
   const [status, setStatus] = useState("");
-  const [calendarUrl, setCalendarUrl] = useState("");
   const submit = async (event) => {
     event.preventDefault();
-    const data = Object.fromEntries(new FormData(event.currentTarget));
-    const start = `${data.meetingDate.replaceAll("-", "")}T${data.meetingTime.replace(":", "")}00`;
-    setCalendarUrl(
-      `https://calendar.google.com/calendar/render?action=TEMPLATE&text=DigiSky%20IT%20Consultation&details=${encodeURIComponent(data.service || "Consultation")}&dates=${start}/${start}`,
-    );
+    const form = event.currentTarget;
+    const data = Object.fromEntries(new FormData(form));
     try {
-      await postJson("/bookings", data);
-      setStatus("Booking saved. You can also add it to Google Calendar.");
-    } catch {
+      await postJson("/partners", data);
+      setStatus("Partner request saved. Our team will contact you soon.");
+      form.reset();
+    } catch (error) {
       setStatus(
-        "Booking form is ready. Start the Node/MySQL server to store meetings.",
+        `Partner form is ready. Could not save request: ${error?.message || "API unavailable."}`,
       );
     }
   };
@@ -1196,11 +1763,11 @@ function BookingPage() {
             "linear-gradient(110deg, rgba(10,37,64,.92), rgba(0,102,255,.44)), url(https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=1500&q=80)",
         }}
       >
-        <p className="eyebrow">Booking System</p>
-        <h1>Book a consultation</h1>
+        <p className="eyebrow">Become a Partner</p>
+        <h1>Partner with DigiSky IT</h1>
         <p>
-          Select a date and time for a DigiSky IT consultation. The booking is
-          stored in MySQL and can be added to Google Calendar.
+          Share your details and preferred service area. Our team will connect
+          with you to discuss partnership opportunities.
         </p>
       </section>
       <section className="section mini-form">
@@ -1208,29 +1775,22 @@ function BookingPage() {
           <input name="name" required placeholder="Name" />
           <input name="email" required type="email" placeholder="Email" />
           <input name="phone" type="tel" placeholder="Phone" />
+          <input name="company" placeholder="Company / Business Name" />
           <select name="service" defaultValue="">
             <option value="" disabled>
-              Service
+              Interested Service
             </option>
             {allServices.map((service) => (
               <option key={service.name}>{service.name}</option>
             ))}
           </select>
-          <input name="meetingDate" required type="date" />
-          <input name="meetingTime" required type="time" />
-          <textarea name="notes" rows="4" placeholder="Notes" />
-          <button className="btn">Book Meeting</button>
+          <textarea
+            name="notes"
+            rows="4"
+            placeholder="Tell us about your partnership interest"
+          />
+          <button className="btn">Submit Partner Request</button>
           {status && <p className="form-status">{status}</p>}
-          {calendarUrl && (
-            <a
-              className="btn ghost calendar-link"
-              href={calendarUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Add to Google Calendar
-            </a>
-          )}
         </form>
       </section>
     </>
@@ -1242,27 +1802,19 @@ function AdminPage() {
     localStorage.getItem("digiskyToken") || "",
   );
   const [status, setStatus] = useState("");
-  const [leads, setLeads] = useState([]);
-  const [bookings, setBookings] = useState([]);
-  const [reviews, setReviews] = useState([]);
   const [analytics, setAnalytics] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const load = async (authToken = token) => {
     try {
-      const headers = { Authorization: `Bearer ${authToken}` };
-      const [leadData, bookingData, reviewData, analyticsData] =
-        await Promise.all([
-          fetch(`${API}/leads`, { headers }).then((res) => res.json()),
-          fetch(`${API}/bookings`, { headers }).then((res) => res.json()),
-          fetch(`${API}/reviews`, { headers }).then((res) => res.json()),
-          fetch(`${API}/analytics`, { headers }).then((res) => res.json()),
-        ]);
-      setLeads(Array.isArray(leadData) ? leadData : []);
-      setBookings(Array.isArray(bookingData) ? bookingData : []);
-      setReviews(Array.isArray(reviewData) ? reviewData : []);
-      setAnalytics(analyticsData);
-    } catch {
-      setStatus("Start the Node/MySQL API to load dashboard data.");
+      await getJson("/auth/verify", authToken);
+      setAnalytics(await getJson("/analytics", authToken));
+      setRefreshKey((value) => value + 1);
+      setStatus("");
+    } catch (error) {
+      localStorage.removeItem("digiskyToken");
+      setToken("");
+      setStatus(error?.message || "Start the Node/MySQL API to load dashboard data.");
     }
   };
 
@@ -1275,10 +1827,9 @@ function AdminPage() {
       );
       localStorage.setItem("digiskyToken", data.token);
       setToken(data.token);
-      setStatus("");
       load(data.token);
-    } catch {
-      setStatus("Login failed or API is not running.");
+    } catch (error) {
+      setStatus(error?.message || "Login failed or API is not running.");
     }
   };
 
@@ -1286,18 +1837,6 @@ function AdminPage() {
     localStorage.removeItem("digiskyToken");
     setToken("");
     setStatus("");
-  };
-
-  const deleteRecord = async (type, id) => {
-    if (!id) return;
-    if (!confirm("Delete this record permanently?")) return;
-    try {
-      await deleteJson(`/${type}/${id}`, token);
-      setStatus("Record deleted successfully.");
-      load(token);
-    } catch {
-      setStatus("Could not delete. Check API and MySQL connection.");
-    }
   };
 
   useEffect(() => {
@@ -1346,7 +1885,13 @@ function AdminPage() {
               </button>
               <a
                 className="btn ghost"
-                href={`${API}/leads/export`}
+                href={`${API}/subscribers/export?token=${token}`}
+              >
+                Export Subscribers CSV
+              </a>
+              <a
+                className="btn ghost"
+                href={`${API}/leads/export?token=${token}`}
                 onClick={(event) => {
                   event.currentTarget.href = `${API}/leads/export?token=${token}`;
                 }}
@@ -1360,10 +1905,12 @@ function AdminPage() {
             {analytics && (
               <div className="stats admin-stats">
                 {[
-                  ["Visitors", analytics.visitors],
-                  ["Leads", analytics.leads],
-                  ["Bookings", analytics.bookings],
-                  ["Reviews", analytics.reviews],
+                  ["Services", analytics.services],
+                  ["Blogs", analytics.blogs],
+                  ["Testimonials", analytics.testimonials],
+                  ["Contacts", analytics.contacts],
+                  ["Subscribers", analytics.subscribers],
+                  ["Partners", analytics.partners],
                 ].map(([label, value]) => (
                   <div key={label}>
                     <strong>{value ?? 0}</strong>
@@ -1373,11 +1920,10 @@ function AdminPage() {
               </div>
             )}
             <AdminTables
-              leads={leads}
-              bookings={bookings}
-              reviews={reviews}
               token={token}
-              onDeleteRecord={deleteRecord}
+              refreshKey={refreshKey}
+              setStatus={setStatus}
+              onSaved={() => load(token)}
             />
           </>
         )}
@@ -1389,145 +1935,557 @@ function AdminPage() {
 
 function PrivacyPolicyPage() {
   return (
-    <>
-      <section
-        className="page-hero compact"
-        style={{
-          backgroundImage:
-            "linear-gradient(110deg, rgba(10,37,64,.94), rgba(0,102,255,.36)), url(https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1500&q=80)",
-        }}
-      >
+    <section className="section policy-page">
+      <article>
         <p className="eyebrow">Privacy Policy</p>
-        <h1>Your information stays protected</h1>
+        <h2>Digisky - Privacy Policy</h2>
+        <p className="policy-date">Effective Date: 26 June 2026</p>
         <p>
-          DigiSky IT uses submitted contact details only to respond to inquiries
-          and provide requested business services.
+          At Digisky we value your privacy and are committed to protecting your
+          personal information. This Privacy Policy explains how we collect, use,
+          disclose, and safeguard your information when you use our website and
+          services.
         </p>
-      </section>
-      <section className="section policy-page">
-        <article>
-          <h2>Privacy Policy</h2>
-          <p>
-            DigiSky IT collects details such as name, phone number, email,
-            selected service, messages, reviews, and booking information when
-            users submit forms on this website.
-          </p>
-          <h3>How We Use Information</h3>
-          <p>
-            We use this information to contact you, understand your
-            requirements, manage leads, schedule consultations, provide support,
-            and improve our services.
-          </p>
-          <h3>Data Sharing</h3>
-          <p>
-            We do not sell personal information. Information may be shared only
-            with internal team members or service providers when required to
-            respond to your request.
-          </p>
-          <h3>Data Security</h3>
-          <p>
-            We use reasonable technical and operational measures to keep
-            submitted information secure in our systems.
-          </p>
-          <h3>Contact</h3>
-          <p>
-            For privacy-related questions, contact us at{" "}
-            <a href="mailto:info@digiskyit.com">info@digiskyit.com</a>.
-          </p>
-        </article>
-      </section>
-    </>
+
+        <h3>1. Information We Collect</h3>
+        <p>We may collect:</p>
+        <ul>
+          <li>Name</li>
+          <li>Email Address</li>
+          <li>Mobile Number</li>
+          <li>Company Name</li>
+          <li>Billing Information</li>
+          <li>Business Documents (if required for service activation)</li>
+          <li>IP Address</li>
+          <li>Browser & Device Information</li>
+          <li>Usage Data</li>
+        </ul>
+
+        <h3>2. How We Use Your Information</h3>
+        <p>We use your information to:</p>
+        <ul>
+          <li>Provide our services</li>
+          <li>Process payments</li>
+          <li>Verify your account</li>
+          <li>Respond to customer inquiries</li>
+          <li>Improve our services</li>
+          <li>Send important updates and notifications</li>
+          <li>Comply with legal obligations</li>
+        </ul>
+
+        <h3>3. Data Security</h3>
+        <p>
+          We implement appropriate technical and organizational security
+          measures to protect your personal information from unauthorized access,
+          disclosure, or misuse.
+        </p>
+
+        <h3>4. Third-Party Services</h3>
+        <p>Our services may integrate with third-party platforms including:</p>
+        <ul>
+          <li>Meta (WhatsApp Business Platform)</li>
+          <li>Google</li>
+          <li>Payment Gateway Providers</li>
+          <li>Cloud Hosting Providers</li>
+          <li>Telecom Operators</li>
+          <li>CRM & API Providers</li>
+        </ul>
+        <p>Each third-party provider has its own privacy policies.</p>
+
+        <h3>5. Cookies</h3>
+        <p>
+          We use cookies to improve website performance, analyze traffic, and
+          enhance user experience.
+        </p>
+
+        <h3>6. Data Sharing</h3>
+        <p>
+          We do not sell your personal information. We may share your
+          information only when:
+        </p>
+        <ul>
+          <li>Required by law</li>
+          <li>Necessary to provide our services</li>
+          <li>Required for payment processing</li>
+          <li>Required for service activation</li>
+        </ul>
+
+        <h3>7. User Rights</h3>
+        <p>You may request to:</p>
+        <ul>
+          <li>Access your data</li>
+          <li>Update your information</li>
+          <li>Delete your account (subject to legal and service requirements)</li>
+        </ul>
+
+        <h3>8. Policy Updates</h3>
+        <p>
+          We may update this Privacy Policy from time to time. Changes will be
+          posted on this page.
+        </p>
+      </article>
+    </section>
   );
 }
 
-function AdminTables({ leads, bookings, reviews, token, onDeleteRecord }) {
-  const [contentStatus, setContentStatus] = useState("");
-  const addContent = async (event, path) => {
-    event.preventDefault();
-    try {
-      await postJson(
-        path,
-        Object.fromEntries(new FormData(event.currentTarget)),
-        token,
-      );
-      setContentStatus("Saved successfully.");
-      event.currentTarget.reset();
-    } catch {
-      setContentStatus("Could not save. Check API and MySQL connection.");
-    }
-  };
+function TermsConditionsPage() {
+  return (
+    <section className="section policy-page">
+      <article>
+        <p className="eyebrow">Terms & Conditions</p>
+        <h2>Digisky - Terms & Conditions</h2>
+        <p className="policy-date">Effective Date: 11 Jan 2022</p>
+        <p>
+          By using our website or purchasing our services, you agree to the
+          following terms.
+        </p>
+
+        <h3>1. Services</h3>
+        <p>Digisky provides services including:</p>
+        <ul>
+          <li>Website Development</li>
+          <li>WhatsApp Official API</li>
+          <li>IVR Solutions</li>
+          <li>RCS Messaging</li>
+          <li>Bulk SMS</li>
+          <li>CRM Software</li>
+          <li>Digital Visiting Cards</li>
+          <li>Voice Call Solutions</li>
+          <li>Studio Setup</li>
+          <li>Other Digital Business Solutions</li>
+        </ul>
+
+        <h3>2. Customer Responsibilities</h3>
+        <p>Customers must:</p>
+        <ul>
+          <li>Provide accurate information</li>
+          <li>Follow applicable laws and platform policies</li>
+          <li>Not use our services for spam, fraud, illegal, or abusive activities</li>
+        </ul>
+
+        <h3>3. Payments</h3>
+        <ul>
+          <li>All payments must be made in advance unless otherwise agreed.</li>
+          <li>GST (if applicable) will be charged separately.</li>
+          <li>Delayed payments may result in service suspension.</li>
+        </ul>
+
+        <h3>4. Service Activation</h3>
+        <p>
+          Activation time depends on the selected service and required document
+          verification.
+        </p>
+
+        <h3>5. Third-Party Services</h3>
+        <p>
+          Some services rely on third-party providers such as Meta, telecom
+          operators, hosting providers, and payment gateways. Digisky Solutions
+          is not responsible for delays or outages caused by these providers.
+        </p>
+
+        <h3>6. Intellectual Property</h3>
+        <p>
+          All content, logos, software, designs, and materials developed by
+          Digisky Solutions remain our intellectual property unless otherwise
+          agreed in writing.
+        </p>
+
+        <h3>7. Limitation of Liability</h3>
+        <p>Digisky Solutions shall not be liable for:</p>
+        <ul>
+          <li>Business loss</li>
+          <li>Data loss</li>
+          <li>Revenue loss</li>
+          <li>Service interruptions caused by third parties</li>
+          <li>Force majeure events</li>
+        </ul>
+
+        <h3>8. Service Suspension</h3>
+        <p>We reserve the right to suspend or terminate services if:</p>
+        <ul>
+          <li>Terms are violated</li>
+          <li>Illegal activities are detected</li>
+          <li>Payments remain overdue</li>
+        </ul>
+
+        <h3>9. Governing Law</h3>
+        <p>
+          These Terms shall be governed by the laws of India. Any disputes shall
+          be subject to the jurisdiction of the courts in Jaipur, Rajasthan.
+        </p>
+      </article>
+    </section>
+  );
+}
+
+function AdminTables({ token, refreshKey, setStatus, onSaved }) {
   return (
     <div className="admin-grid">
-      <section>
-        <h2>View Leads</h2>
-        <DataTable
-          rows={leads}
-          keys={["name", "email", "phone", "service", "created_at"]}
-          onDeleteRow={(id) => onDeleteRecord("leads", id)}
-        />
-      </section>
-      <section>
-        <h2>View Contact Requests / Bookings</h2>
-        <DataTable
-          rows={bookings}
-          keys={[
-            "name",
-            "email",
-            "phone",
-            "service",
-            "meeting_date",
-            "meeting_time",
-          ]}
-          onDeleteRow={(id) => onDeleteRecord("bookings", id)}
-        />
-      </section>
-      <section>
-        <h2>View Reviews</h2>
-        <DataTable
-          rows={reviews}
-          keys={["name", "company", "rating", "review", "created_at"]}
-          onDeleteRow={(id) => onDeleteRecord("reviews", id)}
-        />
-      </section>
-      <section>
-        <h2>Add Blogs</h2>
-        <form onSubmit={(e) => addContent(e, "/blogs")}>
-          <input name="title" placeholder="Title" />
-          <input name="imageUrl" placeholder="Image URL" />
-          <textarea name="excerpt" placeholder="Excerpt" />
-          <button className="btn small">Save Blog</button>
-        </form>
-      </section>
-      <section>
-        <h2>Manage Testimonials</h2>
-        <form onSubmit={(e) => addContent(e, "/testimonials")}>
-          <input name="name" placeholder="Name" />
-          <input name="company" placeholder="Company" />
-          <input name="logoUrl" placeholder="Logo URL (optional)" />
-          <select name="rating" defaultValue="5">
-            <option>5</option>
-            <option>4</option>
-            <option>3</option>
+      <AdminCrud
+        title="Services"
+        listPath="/admin/services"
+        savePath="/services"
+        token={token}
+        refreshKey={refreshKey}
+        setStatus={setStatus}
+        onSaved={onSaved}
+        keys={["name", "logo_url", "description", "active", "created_at"]}
+        fields={[
+          ["name", "Service Name", "text", true],
+          ["logoUrl", "Logo URL", "url", true],
+          ["description", "Description", "textarea", true],
+          ["active", "Status", "status"],
+        ]}
+        mapEdit={(row) => ({
+          name: row.name,
+          logoUrl: row.logo_url,
+          description: row.description,
+          active: Number(row.active ?? 1),
+        })}
+      />
+      <AdminCrud
+        title="Blogs"
+        listPath="/admin/blogs"
+        savePath="/blogs"
+        token={token}
+        refreshKey={refreshKey}
+        setStatus={setStatus}
+        onSaved={onSaved}
+        keys={["title", "image_url", "excerpt", "active", "created_at"]}
+        fields={[
+          ["title", "Title", "text", true],
+          ["imageUrl", "Image URL", "url", true],
+          ["excerpt", "Excerpt", "textarea", true],
+          ["content", "Full Content", "textarea"],
+          ["active", "Status", "status"],
+        ]}
+        mapEdit={(row) => ({
+          title: row.title,
+          imageUrl: row.image_url,
+          excerpt: row.excerpt,
+          content: row.content,
+          active: Number(row.active ?? 1),
+        })}
+      />
+      <AdminCrud
+        title="Video Testimonials"
+        listPath="/admin/testimonials"
+        savePath="/testimonials"
+        token={token}
+        refreshKey={refreshKey}
+        setStatus={setStatus}
+        onSaved={onSaved}
+        keys={["name", "company", "designation", "rating", "active", "display_order"]}
+        fields={[
+          ["name", "Client Name", "text", true],
+          ["company", "Company", "text"],
+          ["designation", "Designation", "text"],
+          ["videoUrl", "YouTube Shorts URL", "url", true],
+          ["profileImage", "Profile Image", "url", true],
+          ["rating", "Rating", "rating", true],
+          ["displayOrder", "Display Order", "number"],
+          ["status", "Status", "testimonialStatus"],
+          ["review", "Review", "textarea"],
+        ]}
+        mapEdit={(row) => ({
+          name: row.name,
+          company: row.company,
+          designation: row.designation,
+          videoUrl: row.video_url,
+          profileImage: row.profile_image || row.logo_url,
+          rating: row.rating || 5,
+          displayOrder: row.display_order || 0,
+          status: Number(row.active ?? 1) === 0 ? "inactive" : "active",
+          review: row.review,
+        })}
+      />
+      <AdminList
+        title="Contacts"
+        path="/leads"
+        token={token}
+        refreshKey={refreshKey}
+        setStatus={setStatus}
+        onSaved={onSaved}
+        keys={["name", "email", "phone", "service", "is_read", "created_at"]}
+        actions={(row, reload) => (
+          <button
+            type="button"
+            className="btn small ghost"
+            onClick={async () => {
+              await sendJson(`/leads/${row.id}/read`, "PATCH", { read: !Number(row.is_read) }, token);
+              setStatus(Number(row.is_read) ? "Contact marked unread." : "Contact marked read.");
+              reload();
+              onSaved?.();
+            }}
+          >
+            {Number(row.is_read) ? "Unread" : "Read"}
+          </button>
+        )}
+      />
+      <AdminList
+        title="Newsletter Subscribers"
+        path="/subscribers"
+        token={token}
+        refreshKey={refreshKey}
+        setStatus={setStatus}
+        onSaved={onSaved}
+        keys={["email", "created_at"]}
+      />
+      <AdminList
+        title="Partner Requests"
+        path="/partners"
+        token={token}
+        refreshKey={refreshKey}
+        setStatus={setStatus}
+        onSaved={onSaved}
+        keys={["name", "email", "phone", "company", "service", "status", "created_at"]}
+        actions={(row, reload) => (
+          <select
+            value={row.status || "pending"}
+            onChange={async (event) => {
+              await sendJson(`/partners/${row.id}/status`, "PATCH", { status: event.target.value }, token);
+              setStatus("Partner status updated.");
+              reload();
+              onSaved?.();
+            }}
+          >
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
           </select>
-          <textarea name="review" placeholder="Review" />
-          <button className="btn small">Save Testimonial</button>
-        </form>
-      </section>
-      <section>
-        <h2>Manage Services</h2>
-        <form onSubmit={(e) => addContent(e, "/services")}>
-          <input name="name" placeholder="Service name" />
-          <input name="logoUrl" placeholder="Logo URL (optional)" />
-          <textarea name="description" placeholder="Description" />
-          <button className="btn small">Save Service</button>
-        </form>
-        {contentStatus && <p className="form-status">{contentStatus}</p>}
-      </section>
+        )}
+      />
     </div>
   );
 }
 
-function DataTable({ rows, keys, onDeleteRow }) {
+function AdminCrud({
+  title,
+  listPath,
+  listParams = {},
+  savePath,
+  token,
+  refreshKey,
+  setStatus,
+  onSaved,
+  keys,
+  fields,
+  mapEdit,
+}) {
+  const [editing, setEditing] = useState(null);
+  const initialValues = useMemo(() => {
+    if (!editing) return {};
+    return mapEdit ? mapEdit(editing) : editing;
+  }, [editing, mapEdit]);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = Object.fromEntries(new FormData(form));
+    try {
+      if (editing) {
+        await sendJson(`${savePath}/${editing.id}`, "PUT", data, token);
+      } else {
+        await postJson(savePath, data, token);
+      }
+      setStatus(editing ? `${title} updated.` : `${title} saved.`);
+      setEditing(null);
+      form.reset();
+      onSaved?.();
+    } catch (error) {
+      setStatus(error?.message || `Could not save ${title.toLowerCase()}.`);
+    }
+  };
+
+  return (
+    <section>
+      <div className="admin-section-heading">
+        <h2>{title}</h2>
+        {editing && (
+          <button type="button" className="btn small ghost" onClick={() => setEditing(null)}>
+            Add New
+          </button>
+        )}
+      </div>
+      <form key={editing?.id || `new-${title}`} className="video-testimonial-form" onSubmit={submit}>
+        {fields.map(([name, label, type, required]) => (
+          <AdminField
+            key={name}
+            name={name}
+            label={label}
+            type={type}
+            required={required}
+            value={initialValues[name]}
+          />
+        ))}
+        <button className="btn small">{editing ? `Update ${title}` : `Save ${title}`}</button>
+      </form>
+      <AdminList
+        title={`${title} List`}
+        path={listPath}
+        params={listParams}
+        token={token}
+        refreshKey={refreshKey}
+        setStatus={setStatus}
+        onSaved={onSaved}
+        keys={keys}
+        onEdit={setEditing}
+        compact
+      />
+    </section>
+  );
+}
+
+function AdminField({ name, label, type = "text", required, value = "" }) {
+  if (type === "textarea") {
+    return <textarea name={name} required={required} placeholder={label} defaultValue={value || ""} />;
+  }
+  if (type === "status") {
+    return (
+      <select name={name} defaultValue={String(value ?? 1)}>
+        <option value="1">Active</option>
+        <option value="0">Inactive</option>
+      </select>
+    );
+  }
+  if (type === "testimonialStatus") {
+    return (
+      <select name={name} defaultValue={value || "active"}>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+      </select>
+    );
+  }
+  if (type === "rating") {
+    return (
+      <select name={name} required={required} defaultValue={String(value || 5)}>
+        {[5, 4, 3, 2, 1].map((rating) => (
+          <option key={rating} value={rating}>{rating}</option>
+        ))}
+      </select>
+    );
+  }
+  return (
+    <input
+      name={name}
+      type={type}
+      required={required}
+      min={type === "number" ? "0" : undefined}
+      placeholder={label}
+      defaultValue={value || ""}
+    />
+  );
+}
+
+function AdminList({
+  title,
+  path,
+  params = {},
+  token,
+  refreshKey,
+  setStatus,
+  onSaved,
+  keys,
+  onEdit,
+  actions,
+  compact = false,
+}) {
+  const [rows, setRows] = useState([]);
+  const [meta, setMeta] = useState({ page: 1, pages: 1, total: 0, limit: 10 });
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  const loadRows = async (nextPage = page) => {
+    setLoading(true);
+    try {
+      const data = await getJson(buildAdminPath(path, { ...params, search, page: nextPage, limit: 10 }), token);
+      setRows(rowsFrom(data));
+      setMeta(metaFrom(data));
+    } catch (error) {
+      setStatus(error?.message || `Could not load ${title.toLowerCase()}.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteRow = async (id) => {
+    if (!id || !confirm("Delete this record permanently?")) return;
+    try {
+      await deleteJson(`${deletePath(path)}/${id}`, token);
+      setStatus("Record deleted successfully.");
+      loadRows();
+      onSaved?.();
+    } catch (error) {
+      setStatus(error?.message || "Could not delete record.");
+    }
+  };
+
+  useEffect(() => {
+    loadRows(1);
+    setPage(1);
+  }, [refreshKey, path]);
+
+  return (
+    <div className={compact ? "admin-subsection" : ""}>
+      {!compact && <h2>{title}</h2>}
+      <div className="admin-toolbar">
+        <input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              setPage(1);
+              loadRows(1);
+            }
+          }}
+          placeholder={`Search ${title}`}
+        />
+        <button type="button" className="btn small ghost" onClick={() => { setPage(1); loadRows(1); }}>
+          Search
+        </button>
+      </div>
+      {loading && <p className="form-status">Loading...</p>}
+      <DataTable
+        rows={rows}
+        keys={keys}
+        onEditRow={onEdit}
+        onDeleteRow={deleteRow}
+        extraActions={actions ? (row) => actions(row, () => loadRows(page)) : null}
+      />
+      <Pagination meta={meta} page={page} onPage={(nextPage) => {
+        setPage(nextPage);
+        loadRows(nextPage);
+      }} />
+    </div>
+  );
+}
+
+function buildAdminPath(path, params) {
+  return `${path}${buildQuery(params)}`;
+}
+
+function deletePath(path) {
+  return path.replace(/^\/admin/, "").split("?")[0];
+}
+
+function Pagination({ meta, page, onPage }) {
+  const pages = Number(meta.pages || 1);
+  if (pages <= 1) return null;
+  return (
+    <div className="admin-pagination">
+      <button type="button" className="btn small ghost" disabled={page <= 1} onClick={() => onPage(page - 1)}>
+        Previous
+      </button>
+      <span>Page {page} of {pages}</span>
+      <button type="button" className="btn small ghost" disabled={page >= pages} onClick={() => onPage(page + 1)}>
+        Next
+      </button>
+    </div>
+  );
+}
+
+function DataTable({ rows, keys, onDeleteRow, onEditRow, extraActions }) {
   return (
     <div className="data-table">
       <table>
@@ -1536,7 +2494,7 @@ function DataTable({ rows, keys, onDeleteRow }) {
             {keys.map((key) => (
               <th key={key}>{key.replace("_", " ")}</th>
             ))}
-            {onDeleteRow && <th>Action</th>}
+            {(onEditRow || onDeleteRow || extraActions) && <th>Action</th>}
           </tr>
         </thead>
         <tbody>
@@ -1546,22 +2504,36 @@ function DataTable({ rows, keys, onDeleteRow }) {
                 {keys.map((key) => (
                   <td key={key}>{String(row[key] ?? "")}</td>
                 ))}
-                {onDeleteRow && (
+                {(onEditRow || onDeleteRow || extraActions) && (
                   <td>
-                    <button
-                      type="button"
-                      className="btn small danger"
-                      onClick={() => onDeleteRow(row.id)}
-                    >
-                      Delete
-                    </button>
+                    <div className="video-admin-actions">
+                      {extraActions?.(row)}
+                      {onEditRow && (
+                        <button
+                          type="button"
+                          className="btn small ghost"
+                          onClick={() => onEditRow(row)}
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {onDeleteRow && (
+                        <button
+                          type="button"
+                          className="btn small danger"
+                          onClick={() => onDeleteRow(row.id)}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </td>
                 )}
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={keys.length + (onDeleteRow ? 1 : 0)}>
+              <td colSpan={keys.length + (onEditRow || onDeleteRow || extraActions ? 1 : 0)}>
                 No records yet.
               </td>
             </tr>
@@ -1581,6 +2553,19 @@ function Icon({ name }) {
 }
 
 function Footer() {
+  const [newsletterStatus, setNewsletterStatus] = useState("");
+  const subscribe = async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    try {
+      await postJson("/subscribers", Object.fromEntries(new FormData(form)));
+      setNewsletterStatus("Subscribed successfully.");
+      form.reset();
+    } catch (error) {
+      setNewsletterStatus(error?.message || "Could not subscribe.");
+    }
+  };
+
   return (
     <footer>
       <div className="footer-grid">
@@ -1595,9 +2580,11 @@ function Footer() {
           <h4>Quick Links</h4>
           <a href="#/">Home</a>
           <a href="#/services/whatsapp-official-api">Services</a>
-          <a href="#/booking">Booking</a>
+          <a href="#/become-a-partner">Become a Partner</a>
+          <a href="#/contact">Contact</a>
           <a href="#/admin">Admin</a>
           <a href="#/privacy-policy">Privacy Policy</a>
+          <a href="#/terms-and-conditions">Terms & Conditions</a>
         </div>
         <div>
           <h4>Services</h4>
@@ -1618,10 +2605,11 @@ function Footer() {
             <br />
             Jaipur, Rajasthan
           </p>
-          <form className="newsletter">
-            <input placeholder="Email address" />
+          <form className="newsletter" onSubmit={subscribe}>
+            <input name="email" type="email" required placeholder="Email address" />
             <button>Subscribe</button>
           </form>
+          {newsletterStatus && <p className="form-status">{newsletterStatus}</p>}
           <div className="socials">
             <span>f</span>
             <span>ig</span>
@@ -1638,14 +2626,11 @@ function Footer() {
 function FloatingButtons() {
   return (
     <div className="floating">
-      <a href="https://wa.me/919929245508" aria-label="WhatsApp">
-        ✆
-      </a>
-      <a href="tel:+919929245508" aria-label="Call">
-        ☎
-      </a>
-      <a href="#/" aria-label="Back to top">
-        ↑
+      <a href="https://wa.me/919929245508" aria-label="Chat now on WhatsApp">
+        <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path d="M16.04 4C9.42 4 4.04 9.36 4.04 15.96c0 2.1.56 4.16 1.62 5.96L4 28l6.24-1.62a11.96 11.96 0 0 0 5.8 1.48C22.64 27.86 28 22.5 28 15.9 28 9.34 22.64 4 16.04 4Zm0 21.82c-1.78 0-3.52-.48-5.02-1.38l-.36-.22-3.7.96.98-3.58-.24-.38a9.83 9.83 0 0 1-1.5-5.26c0-5.46 4.42-9.9 9.86-9.9 5.42 0 9.84 4.42 9.84 9.84 0 5.48-4.42 9.92-9.86 9.92Zm5.4-7.4c-.3-.16-1.76-.88-2.04-.98-.28-.1-.48-.16-.68.16-.2.3-.78.98-.96 1.18-.18.2-.36.22-.66.08-.3-.16-1.26-.46-2.4-1.48-.88-.78-1.48-1.76-1.66-2.06-.18-.3-.02-.46.14-.62.14-.14.3-.36.46-.54.16-.18.2-.3.3-.5.1-.2.04-.38-.02-.54-.08-.16-.68-1.64-.94-2.24-.24-.58-.5-.5-.68-.5h-.58c-.2 0-.52.08-.8.38-.28.3-1.06 1.04-1.06 2.54s1.1 2.96 1.26 3.16c.16.2 2.16 3.3 5.24 4.62.74.32 1.3.5 1.76.64.74.24 1.4.2 1.94.12.6-.1 1.76-.72 2-1.42.24-.7.24-1.3.18-1.42-.08-.12-.28-.2-.58-.36Z" />
+        </svg>
+        <span>Chat now</span>
       </a>
     </div>
   );

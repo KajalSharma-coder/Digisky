@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Digi Sky Creative Technology logo</title>
+  <desc id="desc">Blue circular Digi Sky logo with white lettering and bird mark.</desc>
+  <rect width="512" height="512" fill="#000"/>
+  <circle cx="256" cy="256" r="238" fill="#456de6"/>
+  <circle cx="256" cy="256" r="228" fill="none" stroke="#fff" stroke-width="8"/>
+  <circle cx="256" cy="256" r="216" fill="none" stroke="#dbe6ff" stroke-width="3"/>
+  <path
+    d="M292 156c24 8 41 25 55 45 19-5 36-5 53 1-22 7-39 17-52 31-13 14-28 20-46 16l-24-6c-10 16-21 29-34 40 2-18 7-34 16-49-20-15-32-35-37-61 17 9 31 20 43 34 6-18 14-35 26-51Z"
+    fill="#fff"
+  />
+  <path
+    d="M98 231c48-31 102-42 162-31"
+    fill="none"
+    stroke="#fff"
+    stroke-width="8"
+    stroke-linecap="round"
+    stroke-dasharray="2 18"
+  />
+  <text
+    x="256"
+    y="289"
+    text-anchor="middle"
+    fill="#fff"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="68"
+    font-weight="800"
+    letter-spacing="2"
+  >
+    DIGI SKY
+  </text>
+  <text
+    x="256"
+    y="333"
+    text-anchor="middle"
+    fill="#fff"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="27"
+    font-style="italic"
+    font-weight="500"
+  >
+    Creative Technology
+  </text>
+</svg>
