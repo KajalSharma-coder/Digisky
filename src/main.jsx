@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
-const API = import.meta.env.VITE_API_URL || "/api";
+const API = (import.meta.env.VITE_API_URL || "http://localhost:3000").replace(/\/$/, "");
 
 function toGoogleCalendarDate(value) {
   return new Date(value)
@@ -688,6 +688,7 @@ const pricingRows = [
 function postJson(path, data, token) {
   return fetch(`${API}${path}`, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -705,6 +706,7 @@ function postJson(path, data, token) {
 function deleteJson(path, token) {
   return fetch(`${API}${path}`, {
     method: "DELETE",
+    credentials: "include",
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
@@ -721,6 +723,7 @@ function deleteJson(path, token) {
 function sendJson(path, method, data, token) {
   return fetch(`${API}${path}`, {
     method,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -738,6 +741,7 @@ function sendJson(path, method, data, token) {
 
 function getJson(path, token) {
   return fetch(`${API}${path}`, {
+    credentials: "include",
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
@@ -847,6 +851,7 @@ function App() {
   useEffect(() => {
     fetch(`${API}/track`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: route }),
     }).catch(() => {});
@@ -1039,7 +1044,7 @@ function HomePage() {
       () => setSlide((current) => (current + 1) % heroSlides.length),
       5200,
     );
-    fetch(`${API}/testimonials`)
+    fetch(`${API}/testimonials`, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => data.length && setTestimonials(data))
       .catch(() => {});
@@ -1497,7 +1502,7 @@ function ContactSection({ serviceName = "" }) {
     const calendarLink = buildGoogleCalendarUrl(data);
     const bookingData = { ...data, notes: data.message };
     try {
-      await postJson("/bookings", bookingData);
+      await postJson("/booking", bookingData);
       setCalendarUrl(calendarLink);
       setStatus("Thank you. Your meeting request has been saved.");
       form.reset();
@@ -1745,7 +1750,7 @@ function PartnerPage() {
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form));
     try {
-      await postJson("/partners", data);
+      await postJson("/partner", data);
       setStatus("Partner request saved. Our team will contact you soon.");
       form.reset();
     } catch (error) {
@@ -2558,7 +2563,7 @@ function Footer() {
     event.preventDefault();
     const form = event.currentTarget;
     try {
-      await postJson("/subscribers", Object.fromEntries(new FormData(form)));
+      await postJson("/subscribe", Object.fromEntries(new FormData(form)));
       setNewsletterStatus("Subscribed successfully.");
       form.reset();
     } catch (error) {

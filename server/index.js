@@ -9,13 +9,30 @@ import { Parser } from "json2csv";
 import { pool, ready } from "./mysql.js";
 
 const app = express();
-const port = process.env.PORT || 4000;
+const PORT = process.env.PORT || 3000;
 const jwtSecret = process.env.JWT_SECRET || "digisky-dev-secret";
-const allowedOrigins = (process.env.CORS_ORIGIN || "")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const allowedOrigins = [
+  "https://digisky-rzq8.vercel.app",
+  "http://localhost:5173",
+];
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    const error = new Error("Origin not allowed by CORS");
+    error.status = 403;
+    callback(error);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 200,
+};
 
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -24,18 +41,6 @@ app.use(rateLimit({
   legacyHeaders: false,
   message: { message: "Too many requests. Please try again later." },
 }));
-
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin || !allowedOrigins.length || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-  }),
-);
 app.use(express.json({ limit: "1mb" }));
 
 class ApiError extends Error {
@@ -67,6 +72,10 @@ function clean(value = "", max = 2000) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, max);
+}
+
+function body(req) {
+  return req.body && typeof req.body === "object" ? req.body : {};
 }
 
 function required(value, label, max) {
@@ -194,6 +203,72 @@ const auth = (req, res, next) => {
   }
 };
 
+app.use((req, _res, next) => {
+  if (req.path.startsWith("/api/")) {
+    next();
+    return;
+  }
+
+  const exactAliases = new Map([
+    ["/health", "/api/health"],
+    ["/login", "/api/login"],
+    ["/testimonials", "/api/testimonials"],
+    ["/services", "/api/services"],
+    ["/blogs", "/api/blogs"],
+    ["/contact", "/api/leads"],
+    ["/booking", "/api/bookings"],
+    ["/partner", "/api/partners"],
+    ["/subscribe", "/api/subscribers"],
+    ["/track", "/api/track"],
+    ["/auth/verify", "/api/auth/verify"],
+    ["/analytics", "/api/analytics"],
+    ["/subscribers/export", "/api/subscribers/export"],
+    ["/leads/export", "/api/leads/export"],
+  ]);
+
+  if (req.method === "GET" && req.path === "/reviews") {
+    req.url = req.url.replace(/^\/reviews/, "/api/public/reviews");
+    next();
+    return;
+  }
+
+  if (req.path === "/reviews") {
+    req.url = req.url.replace(/^\/reviews/, "/api/reviews");
+    next();
+    return;
+  }
+
+  for (const [from, to] of exactAliases.entries()) {
+    if (req.path === from) {
+      req.url = req.url.replace(from, to);
+      next();
+      return;
+    }
+  }
+
+  const prefixAliases = [
+    ["/admin/", "/api/admin/"],
+    ["/leads/", "/api/leads/"],
+    ["/bookings/", "/api/bookings/"],
+    ["/partners/", "/api/partners/"],
+    ["/subscribers/", "/api/subscribers/"],
+    ["/services/", "/api/services/"],
+    ["/blogs/", "/api/blogs/"],
+    ["/testimonials/", "/api/testimonials/"],
+    ["/reviews/", "/api/reviews/"],
+  ];
+
+  for (const [from, to] of prefixAliases) {
+    if (req.path.startsWith(from)) {
+      req.url = req.url.replace(from, to);
+      next();
+      return;
+    }
+  }
+
+  next();
+});
+
 app.get("/api/health", asyncRoute(async (_req, res) => {
   res.json({ ok: true, database: "connected" });
 }));
@@ -203,8 +278,9 @@ app.get("/api/auth/verify", auth, asyncRoute(async (req, res) => {
 }));
 
 app.post("/api/login", asyncRoute(async (req, res) => {
-  const email = requiredEmail(req.body.email);
-  const password = required(req.body.password, "Password", 200);
+  const input = body(req);
+  const email = requiredEmail(input.email);
+  const password = required(input.password, "Password", 200);
   const adminEmail = (process.env.ADMIN_EMAIL || "admin@digiskyit.com").toLowerCase();
   const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
   const validPassword = adminPassword.startsWith("$2")
@@ -213,17 +289,19 @@ app.post("/api/login", asyncRoute(async (req, res) => {
   if (email !== adminEmail || !validPassword) {
     throw new ApiError(401, "Invalid credentials");
   }
-  res.json({ token: jwt.sign({ email, role: "admin" }, jwtSecret, { expiresIn: "8h" }) });
+  const user = { email, role: "admin" };
+  res.json({ token: jwt.sign(user, jwtSecret, { expiresIn: "8h" }), user });
 }));
 
 app.post("/api/leads", asyncRoute(async (req, res) => {
+  const input = body(req);
   const data = {
-    name: required(req.body.name, "Name", 120),
-    email: requiredEmail(req.body.email),
-    phone: required(req.body.phone, "Phone", 40),
-    service: clean(req.body.service, 160),
-    message: clean(req.body.message, 2000),
-    source: clean(req.body.source || "website", 80),
+    name: required(input.name, "Name", 120),
+    email: requiredEmail(input.email),
+    phone: required(input.phone, "Phone", 40),
+    service: clean(input.service, 160),
+    message: clean(input.message, 2000),
+    source: clean(input.source || "website", 80),
   };
   await pool.execute(
     "INSERT INTO leads (name, email, phone, service, message, source) VALUES (?, ?, ?, ?, ?, ?)",
@@ -241,7 +319,8 @@ app.get("/api/leads", auth, asyncRoute(async (req, res) => {
 }));
 
 app.patch("/api/leads/:id/read", auth, asyncRoute(async (req, res) => {
-  const read = req.body.read === undefined ? 1 : Number(Boolean(req.body.read));
+  const input = body(req);
+  const read = input.read === undefined ? 1 : Number(Boolean(input.read));
   const [result] = await pool.execute("UPDATE leads SET is_read = ? WHERE id = ?", [read, rowId(req.params.id, "Lead")]);
   if (!result.affectedRows) throw new ApiError(404, "Lead not found");
   res.json({ message: read ? "Contact marked as read" : "Contact marked as unread" });
@@ -250,7 +329,7 @@ app.patch("/api/leads/:id/read", auth, asyncRoute(async (req, res) => {
 app.delete("/api/leads/:id", auth, asyncRoute(async (req, res) => {
   const [result] = await pool.execute("DELETE FROM leads WHERE id = ?", [rowId(req.params.id, "Lead")]);
   if (!result.affectedRows) throw new ApiError(404, "Lead not found");
-  res.status(204).end();
+  res.json({ message: "Lead deleted" });
 }));
 
 app.get("/api/leads/export", auth, asyncRoute(async (_req, res) => {
@@ -261,14 +340,15 @@ app.get("/api/leads/export", auth, asyncRoute(async (_req, res) => {
 }));
 
 app.post("/api/bookings", asyncRoute(async (req, res) => {
+  const input = body(req);
   const data = {
-    name: required(req.body.name, "Name", 120),
-    email: requiredEmail(req.body.email),
-    phone: clean(req.body.phone, 40),
-    service: clean(req.body.service, 160),
-    meetingDate: required(req.body.meetingDate || req.body.meeting_date, "Meeting date", 20),
-    meetingTime: required(req.body.meetingTime || req.body.meeting_time, "Meeting time", 20),
-    notes: clean(req.body.notes || req.body.message, 2000),
+    name: required(input.name, "Name", 120),
+    email: requiredEmail(input.email),
+    phone: clean(input.phone, 40),
+    service: clean(input.service, 160),
+    meetingDate: required(input.meetingDate || input.meeting_date, "Meeting date", 20),
+    meetingTime: required(input.meetingTime || input.meeting_time, "Meeting time", 20),
+    notes: clean(input.notes || input.message, 2000),
   };
   await pool.execute(
     "INSERT INTO bookings (name, email, phone, service, meeting_date, meeting_time, notes) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -289,17 +369,18 @@ app.get("/api/bookings", auth, asyncRoute(async (req, res) => {
 app.delete("/api/bookings/:id", auth, asyncRoute(async (req, res) => {
   const [result] = await pool.execute("DELETE FROM bookings WHERE id = ?", [rowId(req.params.id, "Booking")]);
   if (!result.affectedRows) throw new ApiError(404, "Booking not found");
-  res.status(204).end();
+  res.json({ message: "Booking deleted" });
 }));
 
 app.post("/api/partners", asyncRoute(async (req, res) => {
+  const input = body(req);
   const data = {
-    name: required(req.body.name, "Name", 120),
-    email: requiredEmail(req.body.email),
-    phone: clean(req.body.phone, 40),
-    company: clean(req.body.company, 160),
-    service: clean(req.body.service, 160),
-    notes: clean(req.body.notes, 2000),
+    name: required(input.name, "Name", 120),
+    email: requiredEmail(input.email),
+    phone: clean(input.phone, 40),
+    company: clean(input.company, 160),
+    service: clean(input.service, 160),
+    notes: clean(input.notes, 2000),
   };
   await pool.execute(
     "INSERT INTO partners (name, email, phone, company, service, notes) VALUES (?, ?, ?, ?, ?, ?)",
@@ -320,7 +401,7 @@ app.get("/api/partners", auth, asyncRoute(async (req, res) => {
 }));
 
 app.patch("/api/partners/:id/status", auth, asyncRoute(async (req, res) => {
-  const status = normalizeStatus(req.body.status, ["pending", "approved", "rejected"], "pending");
+  const status = normalizeStatus(body(req).status, ["pending", "approved", "rejected"], "pending");
   const [result] = await pool.execute("UPDATE partners SET status = ? WHERE id = ?", [status, rowId(req.params.id, "Partner request")]);
   if (!result.affectedRows) throw new ApiError(404, "Partner request not found");
   res.json({ message: "Partner status updated" });
@@ -329,11 +410,11 @@ app.patch("/api/partners/:id/status", auth, asyncRoute(async (req, res) => {
 app.delete("/api/partners/:id", auth, asyncRoute(async (req, res) => {
   const [result] = await pool.execute("DELETE FROM partners WHERE id = ?", [rowId(req.params.id, "Partner request")]);
   if (!result.affectedRows) throw new ApiError(404, "Partner request not found");
-  res.status(204).end();
+  res.json({ message: "Partner request deleted" });
 }));
 
 app.post("/api/subscribers", asyncRoute(async (req, res) => {
-  const email = requiredEmail(req.body.email);
+  const email = requiredEmail(body(req).email);
   try {
     await pool.execute("INSERT INTO subscribers (email) VALUES (?)", [email]);
   } catch (error) {
@@ -354,7 +435,7 @@ app.get("/api/subscribers", auth, asyncRoute(async (req, res) => {
 app.delete("/api/subscribers/:id", auth, asyncRoute(async (req, res) => {
   const [result] = await pool.execute("DELETE FROM subscribers WHERE id = ?", [rowId(req.params.id, "Subscriber")]);
   if (!result.affectedRows) throw new ApiError(404, "Subscriber not found");
-  res.status(204).end();
+  res.json({ message: "Subscriber deleted" });
 }));
 
 app.get("/api/subscribers/export", auth, asyncRoute(async (_req, res) => {
@@ -378,11 +459,12 @@ app.get("/api/public/reviews", asyncRoute(async (_req, res) => {
 }));
 
 app.post("/api/reviews", asyncRoute(async (req, res) => {
-  const rating = Number(req.body.rating);
+  const input = body(req);
+  const rating = Number(input.rating);
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new ApiError(400, "Rating must be between 1 and 5");
   await pool.execute(
     "INSERT INTO reviews (name, company, rating, review) VALUES (?, ?, ?, ?)",
-    [required(req.body.name, "Name", 120), clean(req.body.company, 160), rating, required(req.body.review, "Review", 2000)],
+    [required(input.name, "Name", 120), clean(input.company, 160), rating, required(input.review, "Review", 2000)],
   );
   res.status(201).json({ message: "Review saved" });
 }));
@@ -390,7 +472,7 @@ app.post("/api/reviews", asyncRoute(async (req, res) => {
 app.delete("/api/reviews/:id", auth, asyncRoute(async (req, res) => {
   const [result] = await pool.execute("DELETE FROM reviews WHERE id = ?", [rowId(req.params.id, "Review")]);
   if (!result.affectedRows) throw new ApiError(404, "Review not found");
-  res.status(204).end();
+  res.json({ message: "Review deleted" });
 }));
 
 app.get("/api/admin/blogs", auth, asyncRoute(async (req, res) => {
@@ -413,21 +495,23 @@ app.get("/api/blogs", asyncRoute(async (req, res) => {
 }));
 
 app.post("/api/blogs", auth, asyncRoute(async (req, res) => {
-  const title = required(req.body.title, "Title", 220);
-  const imageUrl = requiredUrl(req.body.imageUrl || req.body.image_url, "Image URL");
+  const input = body(req);
+  const title = required(input.title, "Title", 220);
+  const imageUrl = requiredUrl(input.imageUrl || input.image_url, "Image URL");
   await pool.execute(
     "INSERT INTO blogs (title, excerpt, content, image_url) VALUES (?, ?, ?, ?)",
-    [title, required(req.body.excerpt, "Excerpt", 1000), clean(req.body.content, 10000), imageUrl],
+    [title, required(input.excerpt, "Excerpt", 1000), clean(input.content, 10000), imageUrl],
   );
   res.status(201).json({ message: "Blog saved" });
 }));
 
 app.put("/api/blogs/:id", auth, asyncRoute(async (req, res) => {
-  const title = required(req.body.title, "Title", 220);
-  const imageUrl = requiredUrl(req.body.imageUrl || req.body.image_url, "Image URL");
+  const input = body(req);
+  const title = required(input.title, "Title", 220);
+  const imageUrl = requiredUrl(input.imageUrl || input.image_url, "Image URL");
   const [result] = await pool.execute(
     "UPDATE blogs SET title = ?, excerpt = ?, content = ?, image_url = ?, active = ? WHERE id = ?",
-    [title, required(req.body.excerpt, "Excerpt", 1000), clean(req.body.content, 10000), imageUrl, Number(req.body.active ?? 1), rowId(req.params.id, "Blog")],
+    [title, required(input.excerpt, "Excerpt", 1000), clean(input.content, 10000), imageUrl, Number(input.active ?? 1), rowId(req.params.id, "Blog")],
   );
   if (!result.affectedRows) throw new ApiError(404, "Blog not found");
   res.json({ message: "Blog updated" });
@@ -436,7 +520,7 @@ app.put("/api/blogs/:id", auth, asyncRoute(async (req, res) => {
 app.delete("/api/blogs/:id", auth, asyncRoute(async (req, res) => {
   const [result] = await pool.execute("DELETE FROM blogs WHERE id = ?", [rowId(req.params.id, "Blog")]);
   if (!result.affectedRows) throw new ApiError(404, "Blog not found");
-  res.status(204).end();
+  res.json({ message: "Blog deleted" });
 }));
 
 app.get("/api/testimonials", asyncRoute(async (_req, res) => {
@@ -454,7 +538,7 @@ app.get("/api/admin/testimonials", auth, asyncRoute(async (req, res) => {
 }));
 
 app.post("/api/testimonials", auth, asyncRoute(async (req, res) => {
-  const data = normalizeTestimonial(req.body);
+  const data = normalizeTestimonial(body(req));
   await pool.execute(
     `INSERT INTO testimonials
       (name, company, designation, rating, review, profile_image, logo_url, video_url, display_order, active)
@@ -465,7 +549,7 @@ app.post("/api/testimonials", auth, asyncRoute(async (req, res) => {
 }));
 
 app.put("/api/testimonials/:id", auth, asyncRoute(async (req, res) => {
-  const data = normalizeTestimonial(req.body);
+  const data = normalizeTestimonial(body(req));
   const [result] = await pool.execute(
     `UPDATE testimonials
      SET name = ?, company = ?, designation = ?, rating = ?, review = ?, profile_image = ?,
@@ -478,7 +562,8 @@ app.put("/api/testimonials/:id", auth, asyncRoute(async (req, res) => {
 }));
 
 app.patch("/api/testimonials/order", auth, asyncRoute(async (req, res) => {
-  const items = Array.isArray(req.body.items) ? req.body.items : [];
+  const input = body(req);
+  const items = Array.isArray(input.items) ? input.items : [];
   await Promise.all(items.map((item, index) =>
     pool.execute("UPDATE testimonials SET display_order = ? WHERE id = ?", [
       Number(item.displayOrder ?? item.display_order ?? index + 1),
@@ -491,7 +576,7 @@ app.patch("/api/testimonials/order", auth, asyncRoute(async (req, res) => {
 app.delete("/api/testimonials/:id", auth, asyncRoute(async (req, res) => {
   const [result] = await pool.execute("DELETE FROM testimonials WHERE id = ?", [rowId(req.params.id, "Testimonial")]);
   if (!result.affectedRows) throw new ApiError(404, "Testimonial not found");
-  res.status(204).end();
+  res.json({ message: "Testimonial deleted" });
 }));
 
 app.get("/api/services", asyncRoute(async (_req, res) => {
@@ -508,12 +593,13 @@ app.get("/api/admin/services", auth, asyncRoute(async (req, res) => {
 }));
 
 app.post("/api/services", auth, asyncRoute(async (req, res) => {
-  const name = required(req.body.name, "Service name", 160);
-  const logoUrl = requiredUrl(req.body.logoUrl || req.body.logo_url, "Logo URL");
+  const input = body(req);
+  const name = required(input.name, "Service name", 160);
+  const logoUrl = requiredUrl(input.logoUrl || input.logo_url, "Logo URL");
   try {
     await pool.execute(
       "INSERT INTO services (name, description, logo_url) VALUES (?, ?, ?)",
-      [name, required(req.body.description, "Description", 3000), logoUrl],
+      [name, required(input.description, "Description", 3000), logoUrl],
     );
   } catch (error) {
     if (error.code === "ER_DUP_ENTRY") throw new ApiError(400, "Service name already exists");
@@ -523,12 +609,13 @@ app.post("/api/services", auth, asyncRoute(async (req, res) => {
 }));
 
 app.put("/api/services/:id", auth, asyncRoute(async (req, res) => {
-  const name = required(req.body.name, "Service name", 160);
-  const logoUrl = requiredUrl(req.body.logoUrl || req.body.logo_url, "Logo URL");
+  const input = body(req);
+  const name = required(input.name, "Service name", 160);
+  const logoUrl = requiredUrl(input.logoUrl || input.logo_url, "Logo URL");
   try {
     const [result] = await pool.execute(
       "UPDATE services SET name = ?, description = ?, logo_url = ?, active = ? WHERE id = ?",
-      [name, required(req.body.description, "Description", 3000), logoUrl, Number(req.body.active ?? 1), rowId(req.params.id, "Service")],
+      [name, required(input.description, "Description", 3000), logoUrl, Number(input.active ?? 1), rowId(req.params.id, "Service")],
     );
     if (!result.affectedRows) throw new ApiError(404, "Service not found");
   } catch (error) {
@@ -541,7 +628,7 @@ app.put("/api/services/:id", auth, asyncRoute(async (req, res) => {
 app.delete("/api/services/:id", auth, asyncRoute(async (req, res) => {
   const [result] = await pool.execute("DELETE FROM services WHERE id = ?", [rowId(req.params.id, "Service")]);
   if (!result.affectedRows) throw new ApiError(404, "Service not found");
-  res.status(204).end();
+  res.json({ message: "Service deleted" });
 }));
 
 app.get("/api/analytics", auth, asyncRoute(async (_req, res) => {
@@ -572,15 +659,30 @@ app.get("/api/analytics", auth, asyncRoute(async (_req, res) => {
   });
 }));
 
-app.post("/api/track", asyncRoute(async (req, res) => {
-  await pool.execute("INSERT INTO page_views (path) VALUES (?)", [clean(req.body.path || "/", 220)]);
-  res.status(204).end();
+app.get("/api/track", asyncRoute(async (_req, res) => {
+  res.json({ ok: true });
 }));
+
+app.post("/api/track", asyncRoute(async (req, res) => {
+  await pool.execute("INSERT INTO page_views (path) VALUES (?)", [clean(body(req).path || "/", 220)]);
+  res.status(201).json({ message: "Page view tracked" });
+}));
+
+app.use((error, _req, res, _next) => {
+  const status = error.status || 500;
+  if (status >= 500) console.error(error);
+  res.status(status).json({
+    message: status >= 500 ? "Server error" : error.message,
+    ...(process.env.NODE_ENV !== "production" && status >= 500
+      ? { detail: error.message }
+      : {}),
+  });
+});
 
 app.use((req, res) => {
   res.status(404).json({ message: "Endpoint not found" });
 });
 
-app.listen(port, () => {
-  console.log(`DigiSky API running on http://localhost:${port}`);
+app.listen(PORT, () => {
+  console.log(`DigiSky API running on http://localhost:${PORT}`);
 });
