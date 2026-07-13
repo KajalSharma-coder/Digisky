@@ -12,13 +12,18 @@ export const pool = mysql.createPool({
   ...baseConfig,
   database,
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 2,
+  queueLimit: 0,
 });
 
 export const ready = (async () => {
   const bootstrap = await mysql.createConnection(baseConfig);
-  await bootstrap.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``);
-  await bootstrap.end();
+  try {
+    await bootstrap.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``);
+  } finally {
+    await bootstrap.end();
+  }
+
   const ensureColumn = async (table, column, definition) => {
     const [rows] = await pool.query(
       `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
