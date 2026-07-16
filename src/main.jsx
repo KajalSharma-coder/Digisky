@@ -1253,7 +1253,7 @@ function Stats() {
   return (
     <section className="stats reveal">
       {[
-        ["5000+", "Happy Clients"],
+        ["1000+", "Happy Clients"],
         ["300+", "Projects Completed"],
         ["24/7", "Support"],
         ["95%", "Client Satisfaction"],
@@ -2968,7 +2968,7 @@ function Footer() {
     <footer>
       <div className="footer-grid">
         <div>
-          <h3>DigiSky IT</h3>
+          <h3>DigiSky</h3>
           <p>
             Premium communication, automation, website, software, and digital
             transformation services for growing companies.
@@ -3016,7 +3016,7 @@ function Footer() {
           </div>
         </div>
       </div>
-      <div className="bottom">© 2026 DigiSky . All Rights Reserved.</div>
+      <div className="bottom">© 2022 DigiSky . All Rights Reserved.</div>
     </footer>
   );
 }
