@@ -3016,7 +3016,7 @@ function Footer() {
           </div>
         </div>
       </div>
-      <div className="bottom">© 2026 DigiSky IT. All Rights Reserved.</div>
+      <div className="bottom">© 2026 DigiSky . All Rights Reserved.</div>
     </footer>
   );
 }
