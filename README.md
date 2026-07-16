@@ -1,170 +1,272 @@
-<div align="center">
+# 🚀 DigiSky – Complete Digital Services Platform
 
-# DigiSky IT
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
+![React](https://img.shields.io/badge/React-19-blue)
+![Node.js](https://img.shields.io/badge/Node.js-Express-green)
+![MongoDB](https://img.shields.io/badge/Database-MongoDB-success)
+![Vite](https://img.shields.io/badge/Vite-Latest-purple)
 
-### Premium business technology website with lead capture, booking, admin analytics, and MySQL-powered backend.
+DigiSky is a modern full-stack digital services platform that helps businesses establish and grow their online presence. The platform offers a professional website for customers and a powerful admin dashboard for managing services, bookings, blogs, testimonials, partner requests, reviews, subscribers, and leads.
 
-[![React](https://img.shields.io/badge/React-Frontend-149eca?style=for-the-badge&logo=react&logoColor=white)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-Build-646cff?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Express](https://img.shields.io/badge/Express-API-111111?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
-[![MySQL](https://img.shields.io/badge/MySQL-Database-4479a1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
-
-</div>
+Designed with scalability and responsiveness in mind, DigiSky provides a seamless experience for both users and administrators.
 
 ---
 
-## Overview
+# 📌 Features
 
-DigiSky IT is a premium service website built for a modern technology and communication business. It combines a polished React experience with a practical Express API, MySQL persistence, admin login, lead management, booking workflows, testimonials, reviews, analytics, and CSV export.
+## 🌐 User Side
 
-The experience is designed around high-intent visitors: service discovery, trust-building content, quick contact actions, consultation booking, and an admin dashboard for managing business enquiries.
+- Responsive modern landing page
+- Explore digital services
+- Book a consultation
+- Submit partner requests
+- Read latest blogs
+- Customer testimonials
+- Customer reviews
+- Newsletter subscription
+- Contact form
+- Mobile-friendly UI
 
-## Signature Features
+---
 
-- Premium responsive landing experience with service-led hero slides.
-- Dedicated service pages for WhatsApp Official API, IVR, RCS SMS, voice calls, websites, software development, SMS, studio setup, and digital visiting cards.
-- Lead capture form with backend storage.
-- Consultation booking flow with Google Calendar handoff.
-- Admin dashboard with JWT login.
-- Lead, booking, review, testimonial, service, and blog management APIs.
-- Analytics counters for visitors, leads, bookings, reviews, and top services.
-- CSV export for leads.
-- MySQL auto-bootstrap for required tables.
-- Vite proxy for local frontend-to-backend development.
+## 🔐 Admin Dashboard
 
-## Tech Stack
+- Dashboard Analytics
+- Manage Services
+- Manage Blogs
+- Manage Testimonials
+- Manage Reviews
+- Manage Bookings
+- Manage Partner Requests
+- Manage Subscribers
+- Manage Leads
+- Search & Filter
+- CRUD Operations
+- Status Management
+- Secure Authentication
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | React, Vite, CSS |
-| Backend | Node.js, Express |
-| Database | MySQL, mysql2 |
-| Auth | JSON Web Tokens, bcryptjs |
-| Utilities | dotenv, cors, json2csv, concurrently |
+---
 
-## Project Structure
+# 🛠 Tech Stack
 
-```text
-.
-|-- index.html
-|-- package.json
-|-- vite.config.js
-|-- src/
-|   |-- main.jsx
-|   `-- styles.css
-|-- server/
-|   |-- index.js
-|   |-- mysql.js
-|   `-- schema.sql
-`-- .env.example
+## Frontend
+
+- React.js
+- Vite
+- JavaScript (ES6+)
+- HTML5
+- CSS3
+- Bootstrap
+- Axios
+
+## Backend
+
+- Node.js
+- Express.js
+
+## Database
+
+- MongoDB
+- Mongoose
+
+## Other Tools
+
+- Cloudinary
+- JWT Authentication
+- Git
+- GitHub
+
+---
+
+# 📂 Project Structure
+
+```
+DigiSky/
+│
+├── public/
+├── src/
+│   ├── assets/
+│   ├── components/
+│   ├── pages/
+│   ├── admin/
+│   ├── services/
+│   ├── hooks/
+│   ├── utils/
+│   └── App.jsx
+│
+├── server/
+│   ├── config/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── uploads/
+│   └── server.js
+│
+├── package.json
+└── README.md
 ```
 
-## Getting Started
+---
 
-### 1. Install dependencies
+# ⚙ Installation
+
+## Clone Repository
+
+```bash
+git clone https://github.com/yourusername/digisky.git
+```
+
+Go to project folder
+
+```bash
+cd digisky
+```
+
+Install frontend dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Configure environment
-
-Copy `.env.example` to `.env` and update the values for your local machine or hosting platform.
-
-```env
-PORT=4000
-MYSQL_HOST=localhost
-MYSQL_PORT=3306
-MYSQL_USER=root
-MYSQL_PASSWORD=
-MYSQL_DATABASE=digisky_it
-JWT_SECRET=change-this-secret
-ADMIN_EMAIL=admin@digiskyit.com
-ADMIN_PASSWORD=admin123
-```
-
-For production, always set a strong `JWT_SECRET` and change the default admin credentials.
-
-### 3. Start the full application
+Install backend dependencies
 
 ```bash
-npm run dev:full
+cd server
+npm install
 ```
-
-Frontend: `http://localhost:5173`
-
-API: `http://localhost:4000`
-
-### 4. Build for production
-
-```bash
-npm run build
-```
-
-### 5. Preview production build
-
-```bash
-npm run preview
-```
-
-## Available Scripts
-
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Starts the Vite frontend dev server. |
-| `npm run server` | Starts the Express API server. |
-| `npm run dev:full` | Runs frontend and backend together. |
-| `npm run build` | Builds the frontend for production. |
-| `npm run preview` | Serves the production build locally. |
-
-## API Highlights
-
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| `GET` | `/api/health` | Health check with database readiness. |
-| `POST` | `/api/login` | Admin login and JWT creation. |
-| `POST` | `/api/leads` | Store website leads. |
-| `GET` | `/api/leads` | List leads for admin users. |
-| `GET` | `/api/leads/export` | Export leads as CSV. |
-| `POST` | `/api/bookings` | Store consultation bookings. |
-| `GET` | `/api/analytics` | Return dashboard metrics. |
-| `POST` | `/api/reviews` | Store customer reviews. |
-| `GET` | `/api/testimonials` | List testimonials. |
-| `GET` | `/api/services` | List active services. |
-
-## Database
-
-The backend creates the database and required tables automatically on startup using `server/mysql.js`. A manual SQL schema is also available in `server/schema.sql` for deployments where you prefer to initialize MySQL yourself.
-
-## Admin Access
-
-Open `#/admin` in the frontend to access the admin dashboard.
-
-Default development credentials are defined through environment variables:
-
-```text
-ADMIN_EMAIL=admin@digiskyit.com
-ADMIN_PASSWORD=admin123
-```
-
-Change them before deploying publicly.
-
-## Deployment Notes
-
-- Do not commit `.env`.
-- Run `npm run build` before deploying the frontend.
-- Host the Express API with access to a MySQL server.
-- Set `VITE_API_URL` if the frontend and API are hosted on different domains.
-- Use HTTPS and a strong `JWT_SECRET` in production.
-
-## Brand Positioning
-
-DigiSky IT presents a high-trust digital presence for communication, automation, software, and business growth services. The website is built to feel polished, fast, and conversion-ready while keeping operations manageable through a simple admin layer.
 
 ---
 
-<div align="center">
+# ▶ Running the Project
 
-Built for DigiSky IT - communication, automation, websites, software, and digital growth.
+### Start Backend
 
-</div>
+```bash
+cd server
+npm run dev
+```
+
+### Start Frontend
+
+```bash
+npm run dev
+```
+
+Frontend:
+
+```
+http://localhost:5173
+```
+
+Backend:
+
+```
+http://localhost:5000
+```
+
+---
+
+# 🔑 Environment Variables
+
+Create a `.env` file in the root directory.
+
+Example:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+
+MONGODB_URI=your_mongodb_connection_string
+
+JWT_SECRET=your_secret_key
+
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+
+CLOUDINARY_API_KEY=your_api_key
+
+CLOUDINARY_API_SECRET=your_api_secret
+```
+
+---
+
+# 📸 Screenshots
+
+## Home Page
+
+![alt text](<Screenshot 2026-07-16 174331.png>)
+
+---
+
+## Services
+
+![alt text](<Screenshot 2026-07-16 174409.png>)
+![alt text](<Screenshot 2026-07-16 174434.png>)
+
+---
+
+## Admin Dashboard
+
+![alt text](<Screenshot 2026-07-16 174531.png>)
+
+---
+
+## Partner Requests
+
+![alt text](<Screenshot 2026-07-16 174628.png>)
+
+---
+
+## Bookings
+
+![alt text](<Screenshot 2026-07-16 174655.png>)
+
+---
+
+# 📈 Future Improvements
+
+- Payment Gateway
+- Email Notifications
+- WhatsApp API Integration
+- Role-Based Authentication
+- Multi-Admin Support
+- Analytics Dashboard Enhancements
+- SEO Optimization
+- Performance Optimization
+
+---
+
+# 🤝 Contributing
+
+Contributions are welcome!
+
+1. Fork the repository.
+2. Create your feature branch.
+3. Commit your changes.
+4. Push to the branch.
+5. Open a Pull Request.
+
+---
+
+# 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+# 👩‍💻 Developer
+
+**Kajal Sharma**
+
+B.Tech CSE (Data Science)
+
+Swami Keshvanand Institute of Technology, Jaipur
+
+GitHub: https://github.com/yourusername
+
+LinkedIn: https://linkedin.com/in/yourprofile
+
+---
+
+# ⭐ Support
+
+If you found this project useful, please consider giving it a ⭐ on GitHub.
