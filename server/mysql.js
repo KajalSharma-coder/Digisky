@@ -14,12 +14,18 @@ export const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 2,
   queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
 });
 
 export const ready = (async () => {
   const bootstrap = await mysql.createConnection(baseConfig);
   try {
     await bootstrap.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``);
+  } catch (error) {
+    if (!["ER_DBACCESS_DENIED_ERROR", "ER_DB_CREATE_EXISTS"].includes(error.code)) {
+      throw error;
+    }
   } finally {
     await bootstrap.end();
   }
@@ -53,11 +59,15 @@ export const ready = (async () => {
     service VARCHAR(120),
     message TEXT,
     source VARCHAR(80) DEFAULT 'website',
+    status ENUM('new', 'contacted', 'qualified', 'closed') DEFAULT 'new',
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`);
+  await ensureColumn("leads", "status", "status ENUM('new', 'contacted', 'qualified', 'closed') DEFAULT 'new'");
   await ensureColumn("leads", "is_read", "is_read BOOLEAN DEFAULT FALSE");
+  await ensureIndex("leads", "idx_leads_status_created", "INDEX idx_leads_status_created (status, created_at)");
   await ensureIndex("leads", "idx_leads_created_at", "INDEX idx_leads_created_at (created_at)");
+  await ensureIndex("leads", "idx_leads_search", "INDEX idx_leads_search (name, email, phone, service)");
   await pool.query(`CREATE TABLE IF NOT EXISTS reviews (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(120) NOT NULL,
@@ -67,6 +77,8 @@ export const ready = (async () => {
     approved BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`);
+  await ensureColumn("reviews", "approved", "approved BOOLEAN DEFAULT TRUE");
+  await ensureIndex("reviews", "idx_reviews_approved_created", "INDEX idx_reviews_approved_created (approved, created_at)");
   await pool.query(`CREATE TABLE IF NOT EXISTS bookings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(120) NOT NULL,
@@ -76,10 +88,14 @@ export const ready = (async () => {
     meeting_date DATE NOT NULL,
     meeting_time TIME NOT NULL,
     notes TEXT,
+    status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`);
+  await ensureColumn("bookings", "status", "status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending'");
+  await ensureIndex("bookings", "idx_bookings_status_date", "INDEX idx_bookings_status_date (status, meeting_date)");
   await pool.query(`CREATE TABLE IF NOT EXISTS blogs (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    slug VARCHAR(240),
     title VARCHAR(220) NOT NULL,
     excerpt TEXT,
     content MEDIUMTEXT,
@@ -87,8 +103,11 @@ export const ready = (async () => {
     active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`);
+  await ensureColumn("blogs", "slug", "slug VARCHAR(240)");
   await ensureColumn("blogs", "content", "content MEDIUMTEXT");
   await ensureColumn("blogs", "active", "active BOOLEAN DEFAULT TRUE");
+  await ensureColumn("blogs", "created_at", "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+  await ensureIndex("blogs", "uniq_blogs_slug", "UNIQUE KEY uniq_blogs_slug (slug)");
   await ensureIndex("blogs", "idx_blogs_active_created", "INDEX idx_blogs_active_created (active, created_at)");
   await pool.query(`CREATE TABLE IF NOT EXISTS testimonials (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -112,6 +131,7 @@ export const ready = (async () => {
   await ensureColumn("testimonials", "video_url", "video_url TEXT");
   await ensureColumn("testimonials", "display_order", "display_order INT DEFAULT 0");
   await ensureColumn("testimonials", "active", "active BOOLEAN DEFAULT TRUE");
+  await ensureIndex("testimonials", "idx_testimonials_active_order", "INDEX idx_testimonials_active_order (active, display_order, created_at)");
   await pool.query(`CREATE TABLE IF NOT EXISTS services (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(160) NOT NULL,
@@ -146,6 +166,7 @@ export const ready = (async () => {
   )`);
   await ensureColumn("partners", "status", "status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending'");
   await ensureIndex("partners", "idx_partners_status_created", "INDEX idx_partners_status_created (status, created_at)");
+  await ensureIndex("partners", "idx_partners_search", "INDEX idx_partners_search (name, email, phone, company, service)");
   await pool.query(`CREATE TABLE IF NOT EXISTS page_views (
     id INT AUTO_INCREMENT PRIMARY KEY,
     path VARCHAR(220) NOT NULL,

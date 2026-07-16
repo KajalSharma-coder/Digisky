@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import API, { apiRequest, deleteJson, getJson, postJson, sendJson } from "./config/api.js";
 
-const API = (import.meta.env.VITE_API_URL || "http://localhost:3000").replace(/\/$/, "");
+const BUSINESS_PHONE = "+91-9929245508";
+const BUSINESS_PHONE_LINK = "+919929245508";
+const WHATSAPP_PHONE_LINK = "919929245508";
 
 function toGoogleCalendarDate(value) {
   return new Date(value)
@@ -37,6 +40,7 @@ function buildGoogleCalendarUrl({
       phone && `Phone: ${phone}`,
       service && `Service: ${service}`,
       message && `Message: ${message}`,
+      `DigiSky phone: ${BUSINESS_PHONE}`,
     ]
       .filter(Boolean)
       .join("\n"),
@@ -685,82 +689,34 @@ const pricingRows = [
   ["RCS SMS", "Custom", "Custom", "Custom"],
 ];
 
-function postJson(path, data, token) {
-  return fetch(`${API}${path}`, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(data),
-  }).then(async (res) => {
-    if (!res.ok)
-      throw new Error(
-        (await res.json().catch(() => ({}))).message || "Request failed",
-      );
-    return res.json().catch(() => ({}));
-  });
-}
-
-function deleteJson(path, token) {
-  return fetch(`${API}${path}`, {
-    method: "DELETE",
-    credentials: "include",
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  }).then(async (res) => {
-    if (!res.ok) {
-      throw new Error(
-        (await res.json().catch(() => ({}))).message || "Request failed",
-      );
-    }
-    return res.status === 204 ? {} : res.json().catch(() => ({}));
-  });
-}
-
-function sendJson(path, method, data, token) {
-  return fetch(`${API}${path}`, {
-    method,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(data),
-  }).then(async (res) => {
-    if (!res.ok) {
-      throw new Error(
-        (await res.json().catch(() => ({}))).message || "Request failed",
-      );
-    }
-    return res.json().catch(() => ({}));
-  });
-}
-
-function getJson(path, token) {
-  return fetch(`${API}${path}`, {
-    credentials: "include",
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  }).then(async (res) => {
-    if (!res.ok) {
-      throw new Error(
-        (await res.json().catch(() => ({}))).message || "Request failed",
-      );
-    }
-    return res.json().catch(() => ({}));
-  });
-}
-
 function rowsFrom(data) {
-  return Array.isArray(data) ? data : data?.rows || [];
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.rows)) return data.rows;
+  if (Array.isArray(data?.testimonials)) return data.testimonials;
+  if (Array.isArray(data?.services)) return data.services;
+  if (Array.isArray(data?.blogs)) return data.blogs;
+  if (Array.isArray(data?.reviews)) return data.reviews;
+  return [];
 }
 
 function metaFrom(data) {
-  return data?.meta || { total: rowsFrom(data).length, page: 1, limit: 10, pages: 1 };
+  const fallback = { total: rowsFrom(data).length, page: 1, limit: 10, pages: 1 };
+  return data?.meta || {
+    ...fallback,
+    total: Number(data?.total ?? fallback.total),
+    page: Number(data?.page ?? fallback.page),
+    limit: Number(data?.limit ?? fallback.limit),
+    pages: Number(data?.totalPages ?? fallback.pages),
+  };
+}
+
+function slugifyClient(value = "") {
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 function buildQuery(params) {
@@ -770,6 +726,40 @@ function buildQuery(params) {
   });
   const output = query.toString();
   return output ? `?${output}` : "";
+}
+
+function readImageFile(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.size) {
+      resolve("");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      reject(new Error("Please upload a valid image file."));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Could not read the selected image."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function formDataWithImages(form) {
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData);
+  const imageInputs = [...form.querySelectorAll('input[type="file"][data-image-target]')];
+  for (const input of imageInputs) {
+    const target = input.dataset.imageTarget;
+    const file = input.files?.[0];
+    if (file?.size) {
+      data[target] = await readImageFile(file);
+    } else if (input.dataset.imageRequired === "true" && !String(data[target] || "").trim()) {
+      throw new Error("Please provide an image URL or upload an image file.");
+    }
+    delete data[input.name];
+  }
+  return data;
 }
 
 function getVideoEmbed(url = "") {
@@ -797,7 +787,7 @@ function getVideoEmbed(url = "") {
         (["shorts", "embed"].includes(parts[0]) ? parts[1] : "");
     }
 
-    if (id) {
+    if (/^[a-zA-Z0-9_-]{11}$/.test(id)) {
       return {
         platform: "YouTube Shorts",
         src: `https://www.youtube.com/embed/${id}`,
@@ -849,12 +839,17 @@ function App() {
   }, [route]);
 
   useEffect(() => {
-    fetch(`${API}/track`, {
+    const trackedRouteKey = `digisky-tracked:${route}`;
+    if (sessionStorage.getItem(trackedRouteKey)) return;
+    sessionStorage.setItem(trackedRouteKey, "1");
+
+    apiRequest("/track", {
       method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: route }),
-    }).catch(() => {});
+      body: { path: route },
+      timeoutMs: 5000,
+    }).catch(() => {
+      sessionStorage.removeItem(trackedRouteKey);
+    });
   }, [route]);
 
   useEffect(() => {
@@ -870,7 +865,6 @@ function App() {
         ".service-pill",
         ".best-for-badge",
         ".pricing-chip",
-        ".admin-grid > *",
         ".footer-grid > *",
       ].join(","),
     );
@@ -904,35 +898,40 @@ function App() {
     ? route.split("/").pop()
     : null;
   const service = serviceDetails.find((item) => item.slug === serviceSlug);
+  const isAdminRoute = route === "/admin";
 
   return (
     <>
       <div className={`loader ${loaded ? "loaded" : ""}`}>
         <strong>DigiSky IT</strong>
       </div>
-      <Header
-        dark={dark}
-        setDark={setDark}
-        menuOpen={menuOpen}
-        setMenuOpen={setMenuOpen}
-      />
-      <main>
-        {service ? (
-          <ServicePage service={service} />
-        ) : route === "/booking" || route === "/become-a-partner" ? (
-          <PartnerPage />
-        ) : route === "/admin" ? (
-          <AdminPage />
-        ) : route === "/privacy-policy" ? (
-          <PrivacyPolicyPage />
-        ) : route === "/terms-and-conditions" ? (
-          <TermsConditionsPage />
-        ) : (
-          <HomePage />
-        )}
-      </main>
-      <Footer />
-      <FloatingButtons />
+      {isAdminRoute ? (
+        <AdminPage />
+      ) : (
+        <>
+          <Header
+            dark={dark}
+            setDark={setDark}
+            menuOpen={menuOpen}
+            setMenuOpen={setMenuOpen}
+          />
+          <main>
+            {service ? (
+              <ServicePage service={service} />
+            ) : route === "/booking" || route === "/become-a-partner" ? (
+              <PartnerPage />
+            ) : route === "/privacy-policy" ? (
+              <PrivacyPolicyPage />
+            ) : route === "/terms-and-conditions" ? (
+              <TermsConditionsPage />
+            ) : (
+              <HomePage />
+            )}
+          </main>
+          <Footer />
+          <FloatingButtons />
+        </>
+      )}
     </>
   );
 }
@@ -940,10 +939,23 @@ function App() {
 function Header({ dark, setDark, menuOpen, setMenuOpen }) {
   const links = [["Home", "/"]];
   const closeMenu = () => setMenuOpen(false);
+  const showContactForm = () => {
+    closeMenu();
+    if (window.location.hash !== "#/contact") {
+      window.location.hash = "#/contact";
+    }
+    setTimeout(
+      () =>
+        document
+          .getElementById("contact")
+          ?.scrollIntoView({ behavior: "smooth" }),
+      80,
+    );
+  };
   return (
     <header className="navbar">
       <a className="brand" href="#/" aria-label="DigiSky home">
-        <img src="/images/digisky-logo.svg" alt="" />DigiSky
+        <img src="/images/digisky-logo.png" alt="" />DigiSky
       </a>
       <button
         className="menu-toggle"
@@ -990,16 +1002,7 @@ function Header({ dark, setDark, menuOpen, setMenuOpen }) {
         </button>
         <button
           className="btn small"
-          onClick={() => {
-            closeMenu();
-            setTimeout(
-              () =>
-                document
-                  .getElementById("contact")
-                  ?.scrollIntoView({ behavior: "smooth" }),
-              50,
-            );
-          }}
+          onClick={showContactForm}
         >
           Get Started
         </button>
@@ -1044,9 +1047,10 @@ function HomePage() {
       () => setSlide((current) => (current + 1) % heroSlides.length),
       5200,
     );
-    fetch(`${API}/testimonials`, { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => data.length && setTestimonials(data))
+    getJson("/testimonials")
+      .then((data) => {
+        setTestimonials(rowsFrom(data));
+      })
       .catch(() => {});
     return () => clearInterval(timer);
   }, []);
@@ -1187,6 +1191,7 @@ function WhyChoose() {
 }
 
 function ServicesGrid() {
+  const [services, setServices] = useState(allServices);
   const icons = {
     "WhatsApp Official API": "💬",
     "IVR Solutions": "☎️",
@@ -1197,6 +1202,25 @@ function ServicesGrid() {
     "Digital Visiting Card": "💳",
     "Studio Setup": "🎙️",
   };
+  useEffect(() => {
+    let cancelled = false;
+    getJson("/services")
+      .then((data) => {
+        const apiServices = rowsFrom(data)
+          .filter((service) => Number(service.active ?? 1) === 1)
+          .map((service) => ({
+            ...service,
+            slug: service.slug || slugifyClient(service.name),
+            summary: service.summary || service.description || "",
+            image: service.image || service.logo_url || "",
+          }));
+        if (!cancelled && apiServices.length) setServices(apiServices);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <section id="services" className="section services reveal">
@@ -1205,7 +1229,7 @@ function ServicesGrid() {
         <h2>Communication, software, and automation solutions</h2>
       </div>
       <div className="services-cards-grid">
-        {allServices.map((service) => (
+        {services.map((service) => (
           <a
             href={`#/services/${service.slug}`}
             className="service-card-link"
@@ -1269,24 +1293,24 @@ function TrustedLogos() {
 
 function Testimonials({ testimonials }) {
   const videoTestimonials = testimonials
-    .map((item) => ({ ...item, video: getVideoEmbed(item.video_url) }))
+    .filter((item) => Number(item.active ?? 1) === 1)
+    .map((item) => ({ ...item, video: getVideoEmbed(item.youtube_url || item.video_url) }))
     .filter((item) => item.video);
 
   return (
     <section id="testimonials" className="section testimonials reveal">
       <div className="section-heading">
-        <p className="eyebrow">Video Testimonials</p>
-        <h2>Client stories in YouTube Shorts</h2>
+        <h2>Testimonials</h2>
       </div>
       <div className="testimonial-video-track" aria-label="Video testimonials">
         {videoTestimonials.map((item, index) => (
           <article
             className="testimonial-video-card"
-            key={`${item.video_url}-${index}`}
+            key={item.id || item.youtube_url || item.video_url || index}
           >
             <div className="shorts-frame">
               <iframe
-                title={`${item.name || "Client"} video testimonial`}
+                title={`${item.client_name || item.name || "Client"} video testimonial`}
                 src={`${item.video.src}?rel=0&modestbranding=1`}
                 loading="lazy"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1299,15 +1323,15 @@ function Testimonials({ testimonials }) {
                   <img
                     loading="lazy"
                     src={item.profile_image || item.logo_url}
-                    alt={`${item.name || "Client"} profile`}
+                    alt={`${item.client_name || item.name || "Client"} profile`}
                   />
                 ) : (
                   <span aria-hidden="true">
-                    {(item.name || "C").slice(0, 1).toUpperCase()}
+                    {(item.client_name || item.name || "C").slice(0, 1).toUpperCase()}
                   </span>
                 )}
                 <div>
-                  <strong>{item.name || "Client"}</strong>
+                  <strong>{item.client_name || item.name || "Client"}</strong>
                   <small>{item.company || "Company"}</small>
                 </div>
               </div>
@@ -1500,13 +1524,22 @@ function ContactSection({ serviceName = "" }) {
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form));
     const calendarLink = buildGoogleCalendarUrl(data);
+    const calendarWindow = calendarLink ? window.open("about:blank", "_blank") : null;
     const bookingData = { ...data, notes: data.message };
     try {
       await postJson("/booking", bookingData);
       setCalendarUrl(calendarLink);
-      setStatus("Thank you. Your meeting request has been saved.");
+      if (calendarLink) {
+        if (calendarWindow) {
+          calendarWindow.location.href = calendarLink;
+        } else {
+          window.open(calendarLink, "_blank", "noopener,noreferrer");
+        }
+      }
+      setStatus("Thank you. Your meeting request has been saved. Google Calendar is ready in a new tab.");
       form.reset();
     } catch (error) {
+      calendarWindow?.close();
       setCalendarUrl(calendarLink);
       setStatus(
         `Form is ready. Could not send request: ${error?.message || "API unavailable."}`,
@@ -1521,17 +1554,17 @@ function ContactSection({ serviceName = "" }) {
           <h2>Start your digital growth project</h2>
           <p>Jaipur, Rajasthan, India</p>
           <p>
-            <a href="tel:+919929245508">+91-9929245508</a>
+            <a href={`tel:${BUSINESS_PHONE_LINK}`}>{BUSINESS_PHONE}</a>
           </p>
           <p>
             <a href="mailto:info@digiskyit.com">info@digiskyit.com</a> ·{" "}
             <a href="mailto:support@digiskyit.com">support@digiskyit.com</a>
           </p>
           <div className="contact-actions">
-            <a className="btn" href="tel:+919929245508">
+            <a className="btn" href={`tel:${BUSINESS_PHONE_LINK}`}>
               Call Now
             </a>
-            <a className="btn ghost" href="https://wa.me/919929245508">
+            <a className="btn ghost" href={`https://wa.me/${WHATSAPP_PHONE_LINK}`}>
               WhatsApp
             </a>
           </div>
@@ -1809,8 +1842,14 @@ function AdminPage() {
   const [status, setStatus] = useState("");
   const [analytics, setAnalytics] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(true);
+  const [activeAdminView, setActiveAdminView] = useState("dashboard");
 
   const load = async (authToken = token) => {
+    setLoading(true);
     try {
       await getJson("/auth/verify", authToken);
       setAnalytics(await getJson("/analytics", authToken));
@@ -1820,21 +1859,28 @@ function AdminPage() {
       localStorage.removeItem("digiskyToken");
       setToken("");
       setStatus(error?.message || "Start the Node/MySQL API to load dashboard data.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const login = async (event) => {
     event.preventDefault();
+    setLoginLoading(true);
+    setStatus("");
     try {
       const data = await postJson(
         "/login",
         Object.fromEntries(new FormData(event.currentTarget)),
       );
-      localStorage.setItem("digiskyToken", data.token);
+      if (remember) localStorage.setItem("digiskyToken", data.token);
       setToken(data.token);
+      setStatus("Login successful");
       load(data.token);
     } catch (error) {
-      setStatus(error?.message || "Login failed or API is not running.");
+      setStatus(error?.message || "Invalid credentials");
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -1848,93 +1894,176 @@ function AdminPage() {
     if (token) load(token);
   }, []);
 
+  const statCards = [
+    ["Total Services", analytics?.services, "Live catalog"],
+    ["Total Leads", analytics?.leads ?? analytics?.contacts, "Customer enquiries"],
+    ["Bookings", analytics?.bookings, "Consultation requests"],
+    ["Subscribers", analytics?.subscribers, "Newsletter audience"],
+  ];
+  const sidebarItems = [
+    ["Dashboard", "dashboard"],
+    ["Analytics", "analytics"],
+    ["Services", "services"],
+    ["Blogs", "blogs"],
+    ["Testimonials", "testimonials"],
+    ["Reviews", "reviews"],
+    ["Bookings", "bookings"],
+    ["Partners", "partners"],
+    ["Subscribers", "subscribers"],
+    ["Leads", "leads"],
+    ["Settings", "settings"],
+  ];
+  const activeAdminLabel =
+    sidebarItems.find(([, id]) => id === activeAdminView)?.[0] || "Dashboard";
+
   return (
-    <>
-      <section
-        className="page-hero compact"
-        style={{
-          backgroundImage:
-            "linear-gradient(110deg, rgba(10,37,64,.92), rgba(0,102,255,.44)), url(https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1500&q=80)",
-        }}
-      >
-        <p className="eyebrow">Admin Dashboard</p>
-        <h1>Lead management, content, reviews, and analytics</h1>
-        <p>
-          Login, view leads, export Excel-compatible CSV, manage requests, and
-          monitor service demand.
-        </p>
-      </section>
-      <section className="section admin">
-        {!token ? (
+    <main className={token ? "admin-shell" : "admin-auth-page"}>
+      {!token ? (
+        <section className="admin-auth-card">
+          <img src="/images/digisky-logo.png" alt="DigiSky IT" />
+          <p className="admin-kicker">Admin Portal</p>
+          <h1>Sign in to DigiSky</h1>
           <form onSubmit={login} className="admin-login">
-            <input
-              name="email"
-              type="email"
-              defaultValue="admin@digiskyit.com"
-              placeholder="Admin email"
-            />
-            <input
-              name="password"
-              type="password"
-              defaultValue="admin123"
-              placeholder="Password"
-            />
-            <button className="btn">Login</button>
-            {status && <p className="form-status">{status}</p>}
+            <label>
+              Email
+              <input name="email" type="email" autoComplete="email" placeholder="admin@digiskyit.com" required />
+            </label>
+            <label>
+              Password
+              <span className="admin-password-field">
+                <input
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder="Enter password"
+                  required
+                />
+                <button type="button" onClick={() => setShowPassword((value) => !value)}>
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </span>
+            </label>
+            <label className="admin-check">
+              <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />
+              Remember me
+            </label>
+            <button className="btn admin-primary" disabled={loginLoading}>
+              {loginLoading ? "Signing in..." : "Login"}
+            </button>
+            <a className="admin-back-home" href="#/">
+              Back to Home
+            </a>
+            {status && <p className="admin-toast error">{status}</p>}
           </form>
-        ) : (
-          <>
-            <div className="admin-actions">
-              <button className="btn" onClick={() => load()}>
-                Refresh
-              </button>
-              <a
-                className="btn ghost"
-                href={`${API}/subscribers/export?token=${token}`}
-              >
-                Export Subscribers CSV
-              </a>
-              <a
-                className="btn ghost"
-                href={`${API}/leads/export?token=${token}`}
-                onClick={(event) => {
-                  event.currentTarget.href = `${API}/leads/export?token=${token}`;
-                }}
-              >
-                Export Leads CSV
-              </a>
-              <button className="btn ghost" onClick={logout}>
-                Logout
-              </button>
+        </section>
+      ) : (
+        <>
+          <aside className="admin-sidebar">
+            <div className="admin-brand">
+              <img src="/images/digisky-logo.png" alt="DigiSky IT" />
+              <strong>DigiSky Admin</strong>
             </div>
-            {analytics && (
-              <div className="stats admin-stats">
-                {[
-                  ["Services", analytics.services],
-                  ["Blogs", analytics.blogs],
-                  ["Testimonials", analytics.testimonials],
-                  ["Contacts", analytics.contacts],
-                  ["Subscribers", analytics.subscribers],
-                  ["Partners", analytics.partners],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <strong>{value ?? 0}</strong>
-                    <span>{label}</span>
-                  </div>
-                ))}
+            <nav>
+              {sidebarItems.map(([label, id]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={activeAdminView === id ? "is-active" : ""}
+                  onClick={() => setActiveAdminView(id)}
+                >
+                  {label}
+                </button>
+              ))}
+              <button type="button" onClick={logout}>Logout</button>
+            </nav>
+          </aside>
+          <section className="admin-workspace">
+            <header className="admin-topbar">
+              <div>
+                <p className="admin-kicker">Control Room</p>
+                <h1>{activeAdminLabel}</h1>
               </div>
+              <div className="admin-search">
+                <input placeholder="Search admin data" />
+              </div>
+              <button className="admin-icon-button" type="button" aria-label="Notifications">!</button>
+              <div className="admin-profile">
+                <span>Admin</span>
+                <strong>{analytics ? "Online" : "Loading"}</strong>
+              </div>
+            </header>
+            {status && <p className={`admin-toast ${status.toLowerCase().includes("success") || status.toLowerCase().includes("updated") || status.toLowerCase().includes("saved") ? "success" : "error"}`}>{status}</p>}
+            {(activeAdminView === "dashboard" || activeAdminView === "analytics") && (
+            <section className="admin-overview">
+              <div className="admin-heading-row">
+                <div>
+                  <p className="admin-kicker">{activeAdminView === "analytics" ? "Analytics" : "Overview"}</p>
+                  <h2>{activeAdminView === "analytics" ? "Performance Snapshot" : "Business Snapshot"}</h2>
+                </div>
+                <div className="admin-actions">
+                  <button className="btn small" onClick={() => load()} disabled={loading}>
+                    {loading ? "Refreshing..." : "Refresh"}
+                  </button>
+                  <a className="btn small ghost" href={`${API}/leads/export?token=${token}`}>Export Leads</a>
+                  <a className="btn small ghost" href={`${API}/subscribers/export?token=${token}`}>Export Subscribers</a>
+                </div>
+              </div>
+              {activeAdminView === "dashboard" && (
+                <div className="admin-stats">
+                  {statCards.map(([label, value, hint]) => (
+                    <article className="admin-stat-card" key={label}>
+                      <span>{label}</span>
+                      <strong>{value ?? 0}</strong>
+                      <small>{hint}</small>
+                    </article>
+                  ))}
+                </div>
+              )}
+              <div className="admin-dashboard-grid">
+                <article className="admin-panel">
+                  <div className="admin-section-heading">
+                    <h2>Charts</h2>
+                    <span>Lead demand</span>
+                  </div>
+                  <div className="admin-bars">
+                    {(analytics?.topServices?.length ? analytics.topServices : [{ service: "No leads yet", total: 0 }]).map((item) => {
+                      const max = Math.max(...(analytics?.topServices || []).map((row) => Number(row.total || 0)), 1);
+                      return (
+                        <div className="admin-bar-row" key={item.service}>
+                          <span>{item.service}</span>
+                          <div><i style={{ width: `${Math.max(8, (Number(item.total || 0) / max) * 100)}%` }} /></div>
+                          <strong>{item.total}</strong>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </article>
+                <article className="admin-panel">
+                  <div className="admin-section-heading">
+                    <h2>Recent Activity</h2>
+                    <span>Live totals</span>
+                  </div>
+                  <ul className="admin-activity">
+                    <li>{analytics?.visitors ?? 0} tracked page views</li>
+                    <li>{analytics?.reviews ?? 0} customer reviews</li>
+                    <li>{analytics?.partners ?? 0} partner requests</li>
+                    <li>{analytics?.blogs ?? 0} published blog records</li>
+                  </ul>
+                </article>
+              </div>
+            </section>
             )}
             <AdminTables
+              activeView={activeAdminView}
               token={token}
               refreshKey={refreshKey}
               setStatus={setStatus}
               onSaved={() => load(token)}
             />
-          </>
-        )}
-        {status && token && <p className="form-status">{status}</p>}
-      </section>
-    </>
+          </section>
+        </>
+      )}
+    </main>
   );
 }
 
@@ -1944,7 +2073,7 @@ function PrivacyPolicyPage() {
       <article>
         <p className="eyebrow">Privacy Policy</p>
         <h2>Digisky - Privacy Policy</h2>
-        <p className="policy-date">Effective Date: 26 June 2026</p>
+        <p className="policy-date">Effective Date: 11 Jan 2022</p>
         <p>
           At Digisky we value your privacy and are committed to protecting your
           personal information. This Privacy Policy explains how we collect, use,
@@ -2123,10 +2252,11 @@ function TermsConditionsPage() {
   );
 }
 
-function AdminTables({ token, refreshKey, setStatus, onSaved }) {
+function AdminTables({ activeView, token, refreshKey, setStatus, onSaved }) {
   return (
     <div className="admin-grid">
-      <AdminCrud
+      {activeView === "services" && <AdminCrud
+        id="services"
         title="Services"
         listPath="/admin/services"
         savePath="/services"
@@ -2134,10 +2264,13 @@ function AdminTables({ token, refreshKey, setStatus, onSaved }) {
         refreshKey={refreshKey}
         setStatus={setStatus}
         onSaved={onSaved}
-        keys={["name", "logo_url", "description", "active", "created_at"]}
+        filters={[
+          ["active", "All statuses", [["", "All statuses"], ["1", "Active"], ["0", "Inactive"]]],
+        ]}
+        keys={["name", "description", "active", "created_at"]}
         fields={[
           ["name", "Service Name", "text", true],
-          ["logoUrl", "Logo URL", "url", true],
+          ["logoUrl", "Service Image", "image", true],
           ["description", "Description", "textarea", true],
           ["active", "Status", "status"],
         ]}
@@ -2147,8 +2280,25 @@ function AdminTables({ token, refreshKey, setStatus, onSaved }) {
           description: row.description,
           active: Number(row.active ?? 1),
         })}
-      />
-      <AdminCrud
+        actions={(row, helpers) => (
+          <button
+            type="button"
+            className="admin-toggle"
+            aria-pressed={Boolean(Number(row.active))}
+            disabled={helpers.isPending(row.id)}
+            onClick={() => helpers.mutateRow({
+              id: row.id,
+              optimistic: { active: Number(row.active) ? 0 : 1 },
+              request: () => sendJson(`/services/${row.id}/status`, "PATCH", { active: Number(row.active) ? 0 : 1 }, token),
+              successMessage: "Service status updated.",
+            })}
+          >
+            {helpers.isPending(row.id) ? "Saving..." : Number(row.active) ? "Active" : "Inactive"}
+          </button>
+        )}
+      />}
+      {activeView === "blogs" && <AdminCrud
+        id="blogs"
         title="Blogs"
         listPath="/admin/blogs"
         savePath="/blogs"
@@ -2156,10 +2306,13 @@ function AdminTables({ token, refreshKey, setStatus, onSaved }) {
         refreshKey={refreshKey}
         setStatus={setStatus}
         onSaved={onSaved}
+        filters={[
+          ["active", "All statuses", [["", "All statuses"], ["1", "Active"], ["0", "Inactive"]]],
+        ]}
         keys={["title", "image_url", "excerpt", "active", "created_at"]}
         fields={[
           ["title", "Title", "text", true],
-          ["imageUrl", "Image URL", "url", true],
+          ["imageUrl", "Blog Image", "image", true],
           ["excerpt", "Excerpt", "textarea", true],
           ["content", "Full Content", "textarea"],
           ["active", "Status", "status"],
@@ -2171,22 +2324,26 @@ function AdminTables({ token, refreshKey, setStatus, onSaved }) {
           content: row.content,
           active: Number(row.active ?? 1),
         })}
-      />
-      <AdminCrud
-        title="Video Testimonials"
+      />}
+      {activeView === "testimonials" && <AdminCrud
+        id="testimonials"
+        title="Testimonials"
         listPath="/admin/testimonials"
         savePath="/testimonials"
         token={token}
         refreshKey={refreshKey}
         setStatus={setStatus}
         onSaved={onSaved}
+        filters={[
+          ["active", "All statuses", [["", "All statuses"], ["1", "Active"], ["0", "Inactive"]]],
+        ]}
         keys={["name", "company", "designation", "rating", "active", "display_order"]}
         fields={[
           ["name", "Client Name", "text", true],
           ["company", "Company", "text"],
           ["designation", "Designation", "text"],
           ["videoUrl", "YouTube Shorts URL", "url", true],
-          ["profileImage", "Profile Image", "url", true],
+          ["profileImage", "Profile Image", "image"],
           ["rating", "Rating", "rating", true],
           ["displayOrder", "Display Order", "number"],
           ["status", "Status", "testimonialStatus"],
@@ -2203,31 +2360,116 @@ function AdminTables({ token, refreshKey, setStatus, onSaved }) {
           status: Number(row.active ?? 1) === 0 ? "inactive" : "active",
           review: row.review,
         })}
-      />
-      <AdminList
-        title="Contacts"
+      />}
+      {activeView === "leads" && <AdminList
+        id="leads"
+        title="Recent Leads"
         path="/leads"
         token={token}
         refreshKey={refreshKey}
         setStatus={setStatus}
         onSaved={onSaved}
-        keys={["name", "email", "phone", "service", "is_read", "created_at"]}
-        actions={(row, reload) => (
+        filters={[
+          ["status", "All lead statuses", [["", "All lead statuses"], ["new", "New"], ["contacted", "Contacted"], ["qualified", "Qualified"], ["closed", "Closed"]]],
+        ]}
+        keys={["name", "email", "phone", "service", "status", "is_read", "created_at"]}
+        actions={(row, helpers) => (
+          <>
+            <StatusSelect
+              row={row}
+              field="status"
+              disabled={helpers.isPending(row.id)}
+              options={[
+                ["new", "New"],
+                ["contacted", "Contacted"],
+                ["qualified", "Qualified"],
+                ["closed", "Closed"],
+              ]}
+              onChange={(status) => helpers.mutateRow({
+                id: row.id,
+                optimistic: { status },
+                request: () => sendJson(`/leads/${row.id}/status`, "PATCH", { status }, token),
+                successMessage: "Lead status updated.",
+              })}
+            />
+            <button
+              type="button"
+              className="btn small ghost"
+              disabled={helpers.isPending(row.id)}
+              onClick={() => helpers.mutateRow({
+                id: row.id,
+                optimistic: { is_read: Number(row.is_read) ? 0 : 1 },
+                request: () => sendJson(`/leads/${row.id}/read`, "PATCH", { read: !Number(row.is_read) }, token),
+                successMessage: Number(row.is_read) ? "Contact marked unread." : "Contact marked read.",
+              })}
+            >
+              {helpers.isPending(row.id) ? "Saving..." : Number(row.is_read) ? "Unread" : "Read"}
+            </button>
+          </>
+        )}
+      />}
+      {activeView === "bookings" && <AdminList
+        id="bookings"
+        title="Latest Bookings"
+        path="/bookings"
+        token={token}
+        refreshKey={refreshKey}
+        setStatus={setStatus}
+        onSaved={onSaved}
+        filters={[
+          ["status", "All booking statuses", [["", "All booking statuses"], ["pending", "Pending"], ["accepted", "Accepted"], ["rejected", "Rejected"]]],
+        ]}
+        keys={["name", "email", "phone", "service", "meeting_date", "meeting_time", "status", "created_at"]}
+        actions={(row, helpers) => (
+          <StatusSelect
+            row={row}
+            field="status"
+            disabled={helpers.isPending(row.id)}
+            options={[
+              ["pending", "Pending"],
+              ["accepted", "Accepted"],
+              ["rejected", "Rejected"],
+            ]}
+            onChange={(status) => helpers.mutateRow({
+              id: row.id,
+              optimistic: { status },
+              request: () => sendJson(`/bookings/${row.id}/status`, "PATCH", { status }, token),
+              successMessage: "Booking status updated.",
+            })}
+          />
+        )}
+      />}
+      {activeView === "reviews" && <AdminList
+        id="reviews"
+        title="Reviews"
+        path="/reviews"
+        token={token}
+        refreshKey={refreshKey}
+        setStatus={setStatus}
+        onSaved={onSaved}
+        filters={[
+          ["approved", "All review statuses", [["", "All review statuses"], ["1", "Approved"], ["0", "Hidden"]]],
+        ]}
+        keys={["name", "company", "rating", "review", "approved", "created_at"]}
+        actions={(row, helpers) => (
           <button
             type="button"
-            className="btn small ghost"
-            onClick={async () => {
-              await sendJson(`/leads/${row.id}/read`, "PATCH", { read: !Number(row.is_read) }, token);
-              setStatus(Number(row.is_read) ? "Contact marked unread." : "Contact marked read.");
-              reload();
-              onSaved?.();
-            }}
+            className="admin-toggle"
+            aria-pressed={Boolean(Number(row.approved))}
+            disabled={helpers.isPending(row.id)}
+            onClick={() => helpers.mutateRow({
+              id: row.id,
+              optimistic: { approved: Number(row.approved) ? 0 : 1 },
+              request: () => sendJson(`/reviews/${row.id}/status`, "PATCH", { approved: Number(row.approved) ? 0 : 1 }, token),
+              successMessage: "Review status updated.",
+            })}
           >
-            {Number(row.is_read) ? "Unread" : "Read"}
+            {helpers.isPending(row.id) ? "Saving..." : Number(row.approved) ? "Approved" : "Hidden"}
           </button>
         )}
-      />
-      <AdminList
+      />}
+      {activeView === "subscribers" && <AdminList
+        id="subscribers"
         title="Newsletter Subscribers"
         path="/subscribers"
         token={token}
@@ -2235,36 +2477,51 @@ function AdminTables({ token, refreshKey, setStatus, onSaved }) {
         setStatus={setStatus}
         onSaved={onSaved}
         keys={["email", "created_at"]}
-      />
-      <AdminList
+      />}
+      {activeView === "partners" && <AdminList
+        id="partners"
         title="Partner Requests"
         path="/partners"
         token={token}
         refreshKey={refreshKey}
         setStatus={setStatus}
         onSaved={onSaved}
+        filters={[
+          ["status", "All partner statuses", [["", "All partner statuses"], ["pending", "Pending"], ["approved", "Approved"], ["rejected", "Rejected"]]],
+        ]}
         keys={["name", "email", "phone", "company", "service", "status", "created_at"]}
-        actions={(row, reload) => (
-          <select
-            value={row.status || "pending"}
-            onChange={async (event) => {
-              await sendJson(`/partners/${row.id}/status`, "PATCH", { status: event.target.value }, token);
-              setStatus("Partner status updated.");
-              reload();
-              onSaved?.();
-            }}
-          >
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
+        actions={(row, helpers) => (
+          <StatusSelect
+            row={row}
+            field="status"
+            disabled={helpers.isPending(row.id)}
+            options={[
+              ["pending", "Pending"],
+              ["approved", "Approved"],
+              ["rejected", "Rejected"],
+            ]}
+            onChange={(status) => helpers.mutateRow({
+              id: row.id,
+              optimistic: { status },
+              request: () => sendJson(`/partners/${row.id}/status`, "PATCH", { status }, token),
+              successMessage: "Partner status updated.",
+            })}
+          />
         )}
-      />
+      />}
+      {activeView === "settings" && <section id="settings" className="admin-panel">
+        <div className="admin-section-heading">
+          <h2>Settings</h2>
+          <span>Production API</span>
+        </div>
+        <p className="admin-muted">Connected to {API}. Authentication uses short-lived admin JWTs and all admin requests use the shared API helper.</p>
+      </section>}
     </div>
   );
 }
 
 function AdminCrud({
+  id,
   title,
   listPath,
   listParams = {},
@@ -2275,9 +2532,13 @@ function AdminCrud({
   onSaved,
   keys,
   fields,
+  filters,
   mapEdit,
+  actions,
 }) {
   const [editing, setEditing] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const initialValues = useMemo(() => {
     if (!editing) return {};
     return mapEdit ? mapEdit(editing) : editing;
@@ -2286,8 +2547,9 @@ function AdminCrud({
   const submit = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
-    const data = Object.fromEntries(new FormData(form));
+    setSaving(true);
     try {
+      const data = await formDataWithImages(form);
       if (editing) {
         await sendJson(`${savePath}/${editing.id}`, "PUT", data, token);
       } else {
@@ -2295,36 +2557,51 @@ function AdminCrud({
       }
       setStatus(editing ? `${title} updated.` : `${title} saved.`);
       setEditing(null);
+      setModalOpen(false);
       form.reset();
-      onSaved?.();
+      await onSaved?.();
     } catch (error) {
       setStatus(error?.message || `Could not save ${title.toLowerCase()}.`);
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <section>
+    <section id={id} className="admin-panel">
       <div className="admin-section-heading">
         <h2>{title}</h2>
-        {editing && (
-          <button type="button" className="btn small ghost" onClick={() => setEditing(null)}>
-            Add New
-          </button>
-        )}
+        <button type="button" className="btn small" onClick={() => { setEditing(null); setModalOpen(true); }}>
+          Create
+        </button>
       </div>
-      <form key={editing?.id || `new-${title}`} className="video-testimonial-form" onSubmit={submit}>
-        {fields.map(([name, label, type, required]) => (
-          <AdminField
-            key={name}
-            name={name}
-            label={label}
-            type={type}
-            required={required}
-            value={initialValues[name]}
-          />
-        ))}
-        <button className="btn small">{editing ? `Update ${title}` : `Save ${title}`}</button>
-      </form>
+      {(modalOpen || editing) && (
+        <div className="modal" role="dialog" aria-modal="true">
+          <div>
+            <div className="admin-section-heading">
+              <h2>{editing ? `Edit ${title}` : `Create ${title}`}</h2>
+              <button type="button" className="btn small ghost" onClick={() => { setEditing(null); setModalOpen(false); }}>
+                Close
+              </button>
+            </div>
+            <form key={editing?.id || `new-${title}`} className="video-testimonial-form" onSubmit={submit}>
+              {fields.map(([name, label, type, required]) => (
+                <AdminField
+                  key={name}
+                  name={name}
+                  label={label}
+                  type={type}
+                  required={required}
+                  value={initialValues[name]}
+                />
+              ))}
+              <button className="btn small" disabled={saving}>
+                {saving ? "Saving..." : editing ? `Update ${title}` : `Save ${title}`}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
       <AdminList
         title={`${title} List`}
         path={listPath}
@@ -2334,7 +2611,9 @@ function AdminCrud({
         setStatus={setStatus}
         onSaved={onSaved}
         keys={keys}
-        onEdit={setEditing}
+        filters={filters}
+        onEdit={(row) => { setEditing(row); setModalOpen(true); }}
+        actions={actions}
         compact
       />
     </section>
@@ -2370,6 +2649,26 @@ function AdminField({ name, label, type = "text", required, value = "" }) {
       </select>
     );
   }
+  if (type === "image") {
+    return (
+      <label className="admin-image-field">
+        <span>{label}</span>
+        <input
+          name={name}
+          type="url"
+          placeholder={`${label} URL`}
+          defaultValue={value || ""}
+        />
+        <input
+          name={`${name}File`}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          data-image-target={name}
+          data-image-required={required ? "true" : "false"}
+        />
+      </label>
+    );
+  }
   return (
     <input
       name={name}
@@ -2383,6 +2682,7 @@ function AdminField({ name, label, type = "text", required, value = "" }) {
 }
 
 function AdminList({
+  id,
   title,
   path,
   params = {},
@@ -2391,6 +2691,7 @@ function AdminList({
   setStatus,
   onSaved,
   keys,
+  filters = [],
   onEdit,
   actions,
   compact = false,
@@ -2398,13 +2699,21 @@ function AdminList({
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ page: 1, pages: 1, total: 0, limit: 10 });
   const [search, setSearch] = useState("");
+  const [filterValues, setFilterValues] = useState(() => Object.fromEntries(filters.map(([key]) => [key, ""])));
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [pendingRows, setPendingRows] = useState({});
 
-  const loadRows = async (nextPage = page) => {
+  const loadRows = async (nextPage = page, nextFilters = filterValues, nextSearch = search) => {
     setLoading(true);
     try {
-      const data = await getJson(buildAdminPath(path, { ...params, search, page: nextPage, limit: 10 }), token);
+      const data = await getJson(buildAdminPath(path, {
+        ...params,
+        ...nextFilters,
+        search: nextSearch,
+        page: nextPage,
+        limit: 10,
+      }), token);
       setRows(rowsFrom(data));
       setMeta(metaFrom(data));
     } catch (error) {
@@ -2416,23 +2725,63 @@ function AdminList({
 
   const deleteRow = async (id) => {
     if (!id || !confirm("Delete this record permanently?")) return;
+    setPendingRows((current) => ({ ...current, [id]: true }));
     try {
       await deleteJson(`${deletePath(path)}/${id}`, token);
       setStatus("Record deleted successfully.");
-      loadRows();
-      onSaved?.();
+      await loadRows();
+      await onSaved?.();
     } catch (error) {
       setStatus(error?.message || "Could not delete record.");
+    } finally {
+      setPendingRows((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
+    }
+  };
+
+  const mutateRow = async ({ id, optimistic, request, successMessage }) => {
+    const previous = rows.find((row) => row.id === id);
+    if (!id || !previous) return;
+    setPendingRows((current) => ({ ...current, [id]: true }));
+    setRows((current) => current.map((row) => (
+      row.id === id ? { ...row, ...optimistic } : row
+    )));
+    try {
+      const result = await request();
+      const updated = result?.data && typeof result.data === "object" ? result.data : null;
+      if (updated) {
+        setRows((current) => current.map((row) => (
+          row.id === id ? { ...row, ...updated } : row
+        )));
+      }
+      setStatus(successMessage || "Record updated successfully.");
+      await loadRows(page);
+      await onSaved?.();
+    } catch (error) {
+      setRows((current) => current.map((row) => (row.id === id ? previous : row)));
+      setStatus(error?.message || "Could not update record.");
+    } finally {
+      setPendingRows((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
     }
   };
 
   useEffect(() => {
-    loadRows(1);
+    const emptyFilters = Object.fromEntries(filters.map(([key]) => [key, ""]));
+    setSearch("");
+    setFilterValues(emptyFilters);
+    loadRows(1, emptyFilters, "");
     setPage(1);
   }, [refreshKey, path]);
 
   return (
-    <div className={compact ? "admin-subsection" : ""}>
+    <section id={id} className={compact ? "admin-subsection" : "admin-panel"}>
       {!compact && <h2>{title}</h2>}
       <div className="admin-toolbar">
         <input
@@ -2441,12 +2790,29 @@ function AdminList({
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               setPage(1);
-              loadRows(1);
+              loadRows(1, filterValues);
             }
           }}
           placeholder={`Search ${title}`}
         />
-        <button type="button" className="btn small ghost" onClick={() => { setPage(1); loadRows(1); }}>
+        {filters.map(([key, label, options]) => (
+          <select
+            key={key}
+            value={filterValues[key] || ""}
+            aria-label={label}
+            onChange={(event) => {
+              const nextFilters = { ...filterValues, [key]: event.target.value };
+              setFilterValues(nextFilters);
+              setPage(1);
+              loadRows(1, nextFilters);
+            }}
+          >
+            {options.map(([value, optionLabel]) => (
+              <option key={value || "all"} value={value}>{optionLabel}</option>
+            ))}
+          </select>
+        ))}
+        <button type="button" className="btn small ghost" onClick={() => { setPage(1); loadRows(1, filterValues); }}>
           Search
         </button>
       </div>
@@ -2456,13 +2822,18 @@ function AdminList({
         keys={keys}
         onEditRow={onEdit}
         onDeleteRow={deleteRow}
-        extraActions={actions ? (row) => actions(row, () => loadRows(page)) : null}
+        isRowPending={(id) => Boolean(pendingRows[id])}
+        extraActions={actions ? (row) => actions(row, {
+          reload: () => loadRows(page),
+          mutateRow,
+          isPending: (id) => Boolean(pendingRows[id]),
+        }) : null}
       />
       <Pagination meta={meta} page={page} onPage={(nextPage) => {
         setPage(nextPage);
-        loadRows(nextPage);
+        loadRows(nextPage, filterValues);
       }} />
-    </div>
+    </section>
   );
 }
 
@@ -2490,7 +2861,27 @@ function Pagination({ meta, page, onPage }) {
   );
 }
 
-function DataTable({ rows, keys, onDeleteRow, onEditRow, extraActions }) {
+function StatusSelect({ row, field, options, disabled, onChange }) {
+  const value = row[field] || options[0]?.[0] || "";
+  return (
+    <select
+      className="admin-status-select"
+      value={value}
+      disabled={disabled}
+      aria-busy={disabled ? "true" : "false"}
+      onChange={(event) => {
+        const nextStatus = event.target.value;
+        if (nextStatus !== value) onChange(nextStatus);
+      }}
+    >
+      {options.map(([optionValue, label]) => (
+        <option key={optionValue} value={optionValue}>{disabled ? `${label}...` : label}</option>
+      ))}
+    </select>
+  );
+}
+
+function DataTable({ rows, keys, onDeleteRow, onEditRow, extraActions, isRowPending = () => false }) {
   return (
     <div className="data-table">
       <table>
@@ -2517,6 +2908,7 @@ function DataTable({ rows, keys, onDeleteRow, onEditRow, extraActions }) {
                         <button
                           type="button"
                           className="btn small ghost"
+                          disabled={isRowPending(row.id)}
                           onClick={() => onEditRow(row)}
                         >
                           Edit
@@ -2526,9 +2918,10 @@ function DataTable({ rows, keys, onDeleteRow, onEditRow, extraActions }) {
                         <button
                           type="button"
                           className="btn small danger"
+                          disabled={isRowPending(row.id)}
                           onClick={() => onDeleteRow(row.id)}
                         >
-                          Delete
+                          {isRowPending(row.id) ? "Working..." : "Delete"}
                         </button>
                       )}
                     </div>
@@ -2602,7 +2995,7 @@ function Footer() {
         <div>
           <h4>Contact Information</h4>
           <p>
-            +91-9929245508
+            {BUSINESS_PHONE}
             <br />
             info@digiskyit.com
             <br />
@@ -2631,7 +3024,7 @@ function Footer() {
 function FloatingButtons() {
   return (
     <div className="floating">
-      <a href="https://wa.me/919929245508" aria-label="Chat now on WhatsApp">
+      <a href={`https://wa.me/${WHATSAPP_PHONE_LINK}`} aria-label="Chat now on WhatsApp">
         <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
           <path d="M16.04 4C9.42 4 4.04 9.36 4.04 15.96c0 2.1.56 4.16 1.62 5.96L4 28l6.24-1.62a11.96 11.96 0 0 0 5.8 1.48C22.64 27.86 28 22.5 28 15.9 28 9.34 22.64 4 16.04 4Zm0 21.82c-1.78 0-3.52-.48-5.02-1.38l-.36-.22-3.7.96.98-3.58-.24-.38a9.83 9.83 0 0 1-1.5-5.26c0-5.46 4.42-9.9 9.86-9.9 5.42 0 9.84 4.42 9.84 9.84 0 5.48-4.42 9.92-9.86 9.92Zm5.4-7.4c-.3-.16-1.76-.88-2.04-.98-.28-.1-.48-.16-.68.16-.2.3-.78.98-.96 1.18-.18.2-.36.22-.66.08-.3-.16-1.26-.46-2.4-1.48-.88-.78-1.48-1.76-1.66-2.06-.18-.3-.02-.46.14-.62.14-.14.3-.36.46-.54.16-.18.2-.3.3-.5.1-.2.04-.38-.02-.54-.08-.16-.68-1.64-.94-2.24-.24-.58-.5-.5-.68-.5h-.58c-.2 0-.52.08-.8.38-.28.3-1.06 1.04-1.06 2.54s1.1 2.96 1.26 3.16c.16.2 2.16 3.3 5.24 4.62.74.32 1.3.5 1.76.64.74.24 1.4.2 1.94.12.6-.1 1.76-.72 2-1.42.24-.7.24-1.3.18-1.42-.08-.12-.28-.2-.58-.36Z" />
         </svg>

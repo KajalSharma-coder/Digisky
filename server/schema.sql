@@ -9,9 +9,12 @@ CREATE TABLE IF NOT EXISTS leads (
   service VARCHAR(120),
   message TEXT,
   source VARCHAR(80) DEFAULT 'website',
+  status ENUM('new', 'contacted', 'qualified', 'closed') DEFAULT 'new',
   is_read BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_leads_created_at (created_at)
+  INDEX idx_leads_status_created (status, created_at),
+  INDEX idx_leads_created_at (created_at),
+  INDEX idx_leads_search (name, email, phone, service)
 );
 
 CREATE TABLE IF NOT EXISTS reviews (
@@ -21,7 +24,8 @@ CREATE TABLE IF NOT EXISTS reviews (
   rating INT NOT NULL,
   review TEXT NOT NULL,
   approved BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_reviews_approved_created (approved, created_at)
 );
 
 CREATE TABLE IF NOT EXISTS bookings (
@@ -33,17 +37,21 @@ CREATE TABLE IF NOT EXISTS bookings (
   meeting_date DATE NOT NULL,
   meeting_time TIME NOT NULL,
   notes TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  status ENUM('pending', 'accepted', 'rejected') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_bookings_status_date (status, meeting_date)
 );
 
 CREATE TABLE IF NOT EXISTS blogs (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(240),
   title VARCHAR(220) NOT NULL,
   excerpt TEXT,
   content MEDIUMTEXT,
   image_url TEXT,
   active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_blogs_slug (slug),
   INDEX idx_blogs_active_created (active, created_at)
 );
 
@@ -60,7 +68,8 @@ CREATE TABLE IF NOT EXISTS testimonials (
   video_url TEXT,
   display_order INT DEFAULT 0,
   active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_testimonials_active_order (active, display_order, created_at)
 );
 
 CREATE TABLE IF NOT EXISTS services (
@@ -90,7 +99,8 @@ CREATE TABLE IF NOT EXISTS partners (
   notes TEXT,
   status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_partners_status_created (status, created_at)
+  INDEX idx_partners_status_created (status, created_at),
+  INDEX idx_partners_search (name, email, phone, company, service)
 );
 
 CREATE TABLE IF NOT EXISTS page_views (
