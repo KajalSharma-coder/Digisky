@@ -261,9 +261,9 @@ B.Tech CSE (Data Science)
 
 Swami Keshvanand Institute of Technology, Jaipur
 
-GitHub: https://github.com/yourusername
+GitHub: https://github.com/KajalSharma-coder
 
-LinkedIn: https://linkedin.com/in/yourprofile
+LinkedIn: https://www.linkedin.com/in/kajal-sharma-32a905315/
 
 ---
 
