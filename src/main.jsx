@@ -1,11 +1,22 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
-import API, { apiRequest, deleteJson, getJson, postJson, sendJson } from "./config/api.js";
+import API, {
+  apiRequest,
+  deleteJson,
+  getJson,
+  postJson,
+  sendJson,
+} from "./config/api.js";
 
 const BUSINESS_PHONE = "+91-9929245508";
 const BUSINESS_PHONE_LINK = "+919929245508";
 const WHATSAPP_PHONE_LINK = "919929245508";
+const IS_LOCAL_API =
+  /^https?:\/\/(localhost|127\.0\.0\.1)(?::|\/)/.test(API);
+const SHOULD_TRACK_PAGE_VIEWS =
+  import.meta.env.VITE_ENABLE_TRACKING === "true" ||
+  !(import.meta.env.DEV && IS_LOCAL_API);
 
 function toGoogleCalendarDate(value) {
   return new Date(value)
@@ -514,8 +525,7 @@ const serviceDetails = [
     name: "Digital Visiting Card",
     summary:
       "Modern virtual business card with QR code sharing, contact saving, social links, WhatsApp chat, maps, gallery, lead forms, payments, and analytics.",
-    image:
-       "/images/dv.png",
+    image: "/images/dv.png",
     features: [
       "Professional business profile with name, company, designation, logo, and profile photo",
       "One-tap contact saving for customers",
@@ -614,7 +624,11 @@ const serviceDetails = [
       "Technical support available",
       "Ready-to-use studio solution",
     ],
-    pricing: ["Studio consultation", "Custom setup quotation", "Installation and training package"],
+    pricing: [
+      "Studio consultation",
+      "Custom setup quotation",
+      "Installation and training package",
+    ],
     bestFor: [
       "YouTubers",
       "Influencers",
@@ -673,13 +687,78 @@ const projects = [
 ];
 
 const logos = [
-  { name: "Orbit", mark: "O" },
-  { name: "FinEdge", mark: "FE" },
-  { name: "EduSpark", mark: "ES" },
-  { name: "BluePeak", mark: "BP" },
-  { name: "Studio Hive", mark: "SH" },
-  { name: "Jaipur Care", mark: "JC" },
-  { name: "MarketPro", mark: "MP" },
+  {
+    name: "Booster Academy",
+    image: "/images/logos/Booster.jpeg",
+  },
+  {
+    name: "Chokhi Dhani",
+    image: "/images/logos/ChokhiDhani.jpeg",
+  },
+  {
+    name: "Commando Academy",
+    image: "/images/logos/Commando.jpeg",
+  },
+  {
+    name: "Dental Hub",
+    image: "/images/logos/DentalHub.jpeg",
+  },
+  {
+    name: "AF",
+    image: "/images/logos/Fit.jpeg",
+  },
+  {
+    name: "Hope Givers",
+    image: "/images/logos/HopeGivers.jpeg",
+  },
+  {
+    name: "Kwirky",
+    image: "/images/logos/Kwirky.jpeg",
+  },
+  {
+    name: "Last Exam",
+    image: "/images/logos/LastExam.jpeg",
+  },
+  {
+    name: "MamaBot",
+    image: "/images/logos/MamaBot.jpeg",
+  },
+  {
+    name: "MeandBoo",
+    image: "/images/logos/Meandboo.jpeg",
+  },
+  {
+    name: "Nai Professional",
+    image: "/images/logos/Nai.jpeg",
+  },
+  {
+    name: "Pathshala",
+    image: "/images/logos/Pathshala.jpeg",
+  },
+  {
+    name: "RHBA Academy",
+    image: "/images/logos/RHBAA.jpeg",
+  },
+  {
+    name: "Rojgar Ankit",
+    image: "/images/logos/Rojgar.jpeg",
+  },
+  {
+    name: "Samyak",
+    image: "/images/logos/Samyak.jpeg",
+  },
+  {
+    name: "Sapna Beauty Parlour",
+    image: "/images/logos/Sanpnaa.jpeg",
+  },
+  {
+    name: "Shades",
+    image: "/images/logos/Shades.jpeg",
+  },
+  {
+    name: "Vgrow",
+    image: "/images/logos/Vgrow.jpeg",
+  },
 ];
 
 const pricingRows = [
@@ -701,14 +780,21 @@ function rowsFrom(data) {
 }
 
 function metaFrom(data) {
-  const fallback = { total: rowsFrom(data).length, page: 1, limit: 10, pages: 1 };
-  return data?.meta || {
-    ...fallback,
-    total: Number(data?.total ?? fallback.total),
-    page: Number(data?.page ?? fallback.page),
-    limit: Number(data?.limit ?? fallback.limit),
-    pages: Number(data?.totalPages ?? fallback.pages),
+  const fallback = {
+    total: rowsFrom(data).length,
+    page: 1,
+    limit: 10,
+    pages: 1,
   };
+  return (
+    data?.meta || {
+      ...fallback,
+      total: Number(data?.total ?? fallback.total),
+      page: Number(data?.page ?? fallback.page),
+      limit: Number(data?.limit ?? fallback.limit),
+      pages: Number(data?.totalPages ?? fallback.pages),
+    }
+  );
 }
 
 function slugifyClient(value = "") {
@@ -722,7 +808,8 @@ function slugifyClient(value = "") {
 function buildQuery(params) {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") query.set(key, value);
+    if (value !== undefined && value !== null && value !== "")
+      query.set(key, value);
   });
   const output = query.toString();
   return output ? `?${output}` : "";
@@ -740,7 +827,8 @@ function readImageFile(file) {
     }
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("Could not read the selected image."));
+    reader.onerror = () =>
+      reject(new Error("Could not read the selected image."));
     reader.readAsDataURL(file);
   });
 }
@@ -748,13 +836,18 @@ function readImageFile(file) {
 async function formDataWithImages(form) {
   const formData = new FormData(form);
   const data = Object.fromEntries(formData);
-  const imageInputs = [...form.querySelectorAll('input[type="file"][data-image-target]')];
+  const imageInputs = [
+    ...form.querySelectorAll('input[type="file"][data-image-target]'),
+  ];
   for (const input of imageInputs) {
     const target = input.dataset.imageTarget;
     const file = input.files?.[0];
     if (file?.size) {
       data[target] = await readImageFile(file);
-    } else if (input.dataset.imageRequired === "true" && !String(data[target] || "").trim()) {
+    } else if (
+      input.dataset.imageRequired === "true" &&
+      !String(data[target] || "").trim()
+    ) {
       throw new Error("Please provide an image URL or upload an image file.");
     }
     delete data[input.name];
@@ -793,7 +886,6 @@ function getVideoEmbed(url = "") {
         src: `https://www.youtube.com/embed/${id}`,
       };
     }
-
   } catch {
     const match = raw.match(
       /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([a-zA-Z0-9_-]{11})/,
@@ -827,18 +919,12 @@ function App() {
   }, [dark]);
 
   useEffect(() => {
-    if (route !== "/contact") return;
-    const scrollTimer = setTimeout(
-      () =>
-        document
-          .getElementById("contact")
-          ?.scrollIntoView({ behavior: "smooth" }),
-      80,
-    );
-    return () => clearTimeout(scrollTimer);
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [route]);
 
   useEffect(() => {
+    if (!SHOULD_TRACK_PAGE_VIEWS) return;
+
     const trackedRouteKey = `digisky-tracked:${route}`;
     if (sessionStorage.getItem(trackedRouteKey)) return;
     sessionStorage.setItem(trackedRouteKey, "1");
@@ -955,7 +1041,8 @@ function Header({ dark, setDark, menuOpen, setMenuOpen }) {
   return (
     <header className="navbar">
       <a className="brand" href="#/" aria-label="DigiSky home">
-        <img src="/images/digisky-logo.png" alt="" />DigiSky
+        <img src="/images/digisky-logo.png" alt="" />
+        DigiSky
       </a>
       <button
         className="menu-toggle"
@@ -1000,10 +1087,7 @@ function Header({ dark, setDark, menuOpen, setMenuOpen }) {
         >
           {dark ? "☀" : "◐"}
         </button>
-        <button
-          className="btn small"
-          onClick={showContactForm}
-        >
+        <button className="btn small" onClick={showContactForm}>
           Get Started
         </button>
       </nav>
@@ -1118,7 +1202,8 @@ function HomePage() {
 
 function ServiceGraphic({ service }) {
   const callouts = service.features;
-  const proofPoints = service.whyChoosePoints?.slice(0, 3) || service.benefits.slice(0, 3);
+  const proofPoints =
+    service.whyChoosePoints?.slice(0, 3) || service.benefits.slice(0, 3);
 
   return (
     <section className="section service-graphic-section reveal">
@@ -1137,7 +1222,11 @@ function ServiceGraphic({ service }) {
           </div>
         </div>
         <div className="service-graphic-media">
-          <img src={service.image} alt={`${service.name} graphic`} loading="lazy" />
+          <img
+            src={service.image}
+            alt={`${service.name} graphic`}
+            loading="lazy"
+          />
           <div className="service-graphic-badges">
             {proofPoints.map((item) => (
               <span key={item}>{item}</span>
@@ -1282,7 +1371,14 @@ function TrustedLogos() {
             aria-label={logo.name}
             title={logo.name}
           >
-            <span className="logo-bubble">{logo.mark}</span>
+            <span className="logo-frame">
+              <img
+                className="logo-image"
+                src={logo.image}
+                alt=""
+                loading="lazy"
+              />
+            </span>
             <span className="logo-name">{logo.name}</span>
           </span>
         ))}
@@ -1294,7 +1390,10 @@ function TrustedLogos() {
 function Testimonials({ testimonials }) {
   const videoTestimonials = testimonials
     .filter((item) => Number(item.active ?? 1) === 1)
-    .map((item) => ({ ...item, video: getVideoEmbed(item.youtube_url || item.video_url) }))
+    .map((item) => ({
+      ...item,
+      video: getVideoEmbed(item.youtube_url || item.video_url),
+    }))
     .filter((item) => item.video);
 
   return (
@@ -1327,7 +1426,9 @@ function Testimonials({ testimonials }) {
                   />
                 ) : (
                   <span aria-hidden="true">
-                    {(item.client_name || item.name || "C").slice(0, 1).toUpperCase()}
+                    {(item.client_name || item.name || "C")
+                      .slice(0, 1)
+                      .toUpperCase()}
                   </span>
                 )}
                 <div>
@@ -1336,7 +1437,10 @@ function Testimonials({ testimonials }) {
                 </div>
               </div>
               {item.designation && <span>{item.designation}</span>}
-              <div className="stars" aria-label={`${item.rating || 5} star rating`}>
+              <div
+                className="stars"
+                aria-label={`${item.rating || 5} star rating`}
+              >
                 {"★".repeat(Number(item.rating || 5))}
               </div>
               {item.review && <p>{item.review}</p>}
@@ -1524,7 +1628,9 @@ function ContactSection({ serviceName = "" }) {
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form));
     const calendarLink = buildGoogleCalendarUrl(data);
-    const calendarWindow = calendarLink ? window.open("about:blank", "_blank") : null;
+    const calendarWindow = calendarLink
+      ? window.open("about:blank", "_blank")
+      : null;
     const bookingData = { ...data, notes: data.message };
     try {
       await postJson("/booking", bookingData);
@@ -1536,7 +1642,9 @@ function ContactSection({ serviceName = "" }) {
           window.open(calendarLink, "_blank", "noopener,noreferrer");
         }
       }
-      setStatus("Thank you. Your meeting request has been saved. Google Calendar is ready in a new tab.");
+      setStatus(
+        "Thank you. Your meeting request has been saved. Google Calendar is ready in a new tab.",
+      );
       form.reset();
     } catch (error) {
       calendarWindow?.close();
@@ -1564,7 +1672,10 @@ function ContactSection({ serviceName = "" }) {
             <a className="btn" href={`tel:${BUSINESS_PHONE_LINK}`}>
               Call Now
             </a>
-            <a className="btn ghost" href={`https://wa.me/${WHATSAPP_PHONE_LINK}`}>
+            <a
+              className="btn ghost"
+              href={`https://wa.me/${WHATSAPP_PHONE_LINK}`}
+            >
               WhatsApp
             </a>
           </div>
@@ -1858,7 +1969,9 @@ function AdminPage() {
     } catch (error) {
       localStorage.removeItem("digiskyToken");
       setToken("");
-      setStatus(error?.message || "Start the Node/MySQL API to load dashboard data.");
+      setStatus(
+        error?.message || "Start the Node/MySQL API to load dashboard data.",
+      );
     } finally {
       setLoading(false);
     }
@@ -1896,7 +2009,11 @@ function AdminPage() {
 
   const statCards = [
     ["Total Services", analytics?.services, "Live catalog"],
-    ["Total Leads", analytics?.leads ?? analytics?.contacts, "Customer enquiries"],
+    [
+      "Total Leads",
+      analytics?.leads ?? analytics?.contacts,
+      "Customer enquiries",
+    ],
     ["Bookings", analytics?.bookings, "Consultation requests"],
     ["Subscribers", analytics?.subscribers, "Newsletter audience"],
   ];
@@ -1926,7 +2043,13 @@ function AdminPage() {
           <form onSubmit={login} className="admin-login">
             <label>
               Email
-              <input name="email" type="email" autoComplete="email" placeholder="admin@digiskyit.com" required />
+              <input
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder="admin@digiskyit.com"
+                required
+              />
             </label>
             <label>
               Password
@@ -1938,13 +2061,20 @@ function AdminPage() {
                   placeholder="Enter password"
                   required
                 />
-                <button type="button" onClick={() => setShowPassword((value) => !value)}>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                >
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </span>
             </label>
             <label className="admin-check">
-              <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(event) => setRemember(event.target.checked)}
+              />
               Remember me
             </label>
             <button className="btn admin-primary" disabled={loginLoading}>
@@ -1974,7 +2104,9 @@ function AdminPage() {
                   {label}
                 </button>
               ))}
-              <button type="button" onClick={logout}>Logout</button>
+              <button type="button" onClick={logout}>
+                Logout
+              </button>
             </nav>
           </aside>
           <section className="admin-workspace">
@@ -1986,72 +2118,121 @@ function AdminPage() {
               <div className="admin-search">
                 <input placeholder="Search admin data" />
               </div>
-              <button className="admin-icon-button" type="button" aria-label="Notifications">!</button>
+              <button
+                className="admin-icon-button"
+                type="button"
+                aria-label="Notifications"
+              >
+                !
+              </button>
               <div className="admin-profile">
                 <span>Admin</span>
                 <strong>{analytics ? "Online" : "Loading"}</strong>
               </div>
             </header>
-            {status && <p className={`admin-toast ${status.toLowerCase().includes("success") || status.toLowerCase().includes("updated") || status.toLowerCase().includes("saved") ? "success" : "error"}`}>{status}</p>}
-            {(activeAdminView === "dashboard" || activeAdminView === "analytics") && (
-            <section className="admin-overview">
-              <div className="admin-heading-row">
-                <div>
-                  <p className="admin-kicker">{activeAdminView === "analytics" ? "Analytics" : "Overview"}</p>
-                  <h2>{activeAdminView === "analytics" ? "Performance Snapshot" : "Business Snapshot"}</h2>
-                </div>
-                <div className="admin-actions">
-                  <button className="btn small" onClick={() => load()} disabled={loading}>
-                    {loading ? "Refreshing..." : "Refresh"}
-                  </button>
-                  <a className="btn small ghost" href={`${API}/leads/export?token=${token}`}>Export Leads</a>
-                  <a className="btn small ghost" href={`${API}/subscribers/export?token=${token}`}>Export Subscribers</a>
-                </div>
-              </div>
-              {activeAdminView === "dashboard" && (
-                <div className="admin-stats">
-                  {statCards.map(([label, value, hint]) => (
-                    <article className="admin-stat-card" key={label}>
-                      <span>{label}</span>
-                      <strong>{value ?? 0}</strong>
-                      <small>{hint}</small>
-                    </article>
-                  ))}
-                </div>
-              )}
-              <div className="admin-dashboard-grid">
-                <article className="admin-panel">
-                  <div className="admin-section-heading">
-                    <h2>Charts</h2>
-                    <span>Lead demand</span>
+            {status && (
+              <p
+                className={`admin-toast ${status.toLowerCase().includes("success") || status.toLowerCase().includes("updated") || status.toLowerCase().includes("saved") ? "success" : "error"}`}
+              >
+                {status}
+              </p>
+            )}
+            {(activeAdminView === "dashboard" ||
+              activeAdminView === "analytics") && (
+              <section className="admin-overview">
+                <div className="admin-heading-row">
+                  <div>
+                    <p className="admin-kicker">
+                      {activeAdminView === "analytics"
+                        ? "Analytics"
+                        : "Overview"}
+                    </p>
+                    <h2>
+                      {activeAdminView === "analytics"
+                        ? "Performance Snapshot"
+                        : "Business Snapshot"}
+                    </h2>
                   </div>
-                  <div className="admin-bars">
-                    {(analytics?.topServices?.length ? analytics.topServices : [{ service: "No leads yet", total: 0 }]).map((item) => {
-                      const max = Math.max(...(analytics?.topServices || []).map((row) => Number(row.total || 0)), 1);
-                      return (
-                        <div className="admin-bar-row" key={item.service}>
-                          <span>{item.service}</span>
-                          <div><i style={{ width: `${Math.max(8, (Number(item.total || 0) / max) * 100)}%` }} /></div>
-                          <strong>{item.total}</strong>
-                        </div>
-                      );
-                    })}
+                  <div className="admin-actions">
+                    <button
+                      className="btn small"
+                      onClick={() => load()}
+                      disabled={loading}
+                    >
+                      {loading ? "Refreshing..." : "Refresh"}
+                    </button>
+                    <a
+                      className="btn small ghost"
+                      href={`${API}/leads/export?token=${token}`}
+                    >
+                      Export Leads
+                    </a>
+                    <a
+                      className="btn small ghost"
+                      href={`${API}/subscribers/export?token=${token}`}
+                    >
+                      Export Subscribers
+                    </a>
                   </div>
-                </article>
-                <article className="admin-panel">
-                  <div className="admin-section-heading">
-                    <h2>Recent Activity</h2>
-                    <span>Live totals</span>
+                </div>
+                {activeAdminView === "dashboard" && (
+                  <div className="admin-stats">
+                    {statCards.map(([label, value, hint]) => (
+                      <article className="admin-stat-card" key={label}>
+                        <span>{label}</span>
+                        <strong>{value ?? 0}</strong>
+                        <small>{hint}</small>
+                      </article>
+                    ))}
                   </div>
-                  <ul className="admin-activity">
-                    <li>{analytics?.visitors ?? 0} tracked page views</li>
-                    <li>{analytics?.reviews ?? 0} customer reviews</li>
-                    <li>{analytics?.partners ?? 0} partner requests</li>
-                    <li>{analytics?.blogs ?? 0} published blog records</li>
-                  </ul>
-                </article>
-              </div>
-            </section>
+                )}
+                <div className="admin-dashboard-grid">
+                  <article className="admin-panel">
+                    <div className="admin-section-heading">
+                      <h2>Charts</h2>
+                      <span>Lead demand</span>
+                    </div>
+                    <div className="admin-bars">
+                      {(analytics?.topServices?.length
+                        ? analytics.topServices
+                        : [{ service: "No leads yet", total: 0 }]
+                      ).map((item) => {
+                        const max = Math.max(
+                          ...(analytics?.topServices || []).map((row) =>
+                            Number(row.total || 0),
+                          ),
+                          1,
+                        );
+                        return (
+                          <div className="admin-bar-row" key={item.service}>
+                            <span>{item.service}</span>
+                            <div>
+                              <i
+                                style={{
+                                  width: `${Math.max(8, (Number(item.total || 0) / max) * 100)}%`,
+                                }}
+                              />
+                            </div>
+                            <strong>{item.total}</strong>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </article>
+                  <article className="admin-panel">
+                    <div className="admin-section-heading">
+                      <h2>Recent Activity</h2>
+                      <span>Live totals</span>
+                    </div>
+                    <ul className="admin-activity">
+                      <li>{analytics?.visitors ?? 0} tracked page views</li>
+                      <li>{analytics?.reviews ?? 0} customer reviews</li>
+                      <li>{analytics?.partners ?? 0} partner requests</li>
+                      <li>{analytics?.blogs ?? 0} published blog records</li>
+                    </ul>
+                  </article>
+                </div>
+              </section>
             )}
             <AdminTables
               activeView={activeAdminView}
@@ -2076,9 +2257,9 @@ function PrivacyPolicyPage() {
         <p className="policy-date">Effective Date: 11 Jan 2022</p>
         <p>
           At Digisky we value your privacy and are committed to protecting your
-          personal information. This Privacy Policy explains how we collect, use,
-          disclose, and safeguard your information when you use our website and
-          services.
+          personal information. This Privacy Policy explains how we collect,
+          use, disclose, and safeguard your information when you use our website
+          and services.
         </p>
 
         <h3>1. Information We Collect</h3>
@@ -2110,8 +2291,8 @@ function PrivacyPolicyPage() {
         <h3>3. Data Security</h3>
         <p>
           We implement appropriate technical and organizational security
-          measures to protect your personal information from unauthorized access,
-          disclosure, or misuse.
+          measures to protect your personal information from unauthorized
+          access, disclosure, or misuse.
         </p>
 
         <h3>4. Third-Party Services</h3>
@@ -2149,7 +2330,9 @@ function PrivacyPolicyPage() {
         <ul>
           <li>Access your data</li>
           <li>Update your information</li>
-          <li>Delete your account (subject to legal and service requirements)</li>
+          <li>
+            Delete your account (subject to legal and service requirements)
+          </li>
         </ul>
 
         <h3>8. Policy Updates</h3>
@@ -2194,7 +2377,9 @@ function TermsConditionsPage() {
         <ul>
           <li>Provide accurate information</li>
           <li>Follow applicable laws and platform policies</li>
-          <li>Not use our services for spam, fraud, illegal, or abusive activities</li>
+          <li>
+            Not use our services for spam, fraud, illegal, or abusive activities
+          </li>
         </ul>
 
         <h3>3. Payments</h3>
@@ -2255,267 +2440,449 @@ function TermsConditionsPage() {
 function AdminTables({ activeView, token, refreshKey, setStatus, onSaved }) {
   return (
     <div className="admin-grid">
-      {activeView === "services" && <AdminCrud
-        id="services"
-        title="Services"
-        listPath="/admin/services"
-        savePath="/services"
-        token={token}
-        refreshKey={refreshKey}
-        setStatus={setStatus}
-        onSaved={onSaved}
-        filters={[
-          ["active", "All statuses", [["", "All statuses"], ["1", "Active"], ["0", "Inactive"]]],
-        ]}
-        keys={["name", "description", "active", "created_at"]}
-        fields={[
-          ["name", "Service Name", "text", true],
-          ["logoUrl", "Service Image", "image", true],
-          ["description", "Description", "textarea", true],
-          ["active", "Status", "status"],
-        ]}
-        mapEdit={(row) => ({
-          name: row.name,
-          logoUrl: row.logo_url,
-          description: row.description,
-          active: Number(row.active ?? 1),
-        })}
-        actions={(row, helpers) => (
-          <button
-            type="button"
-            className="admin-toggle"
-            aria-pressed={Boolean(Number(row.active))}
-            disabled={helpers.isPending(row.id)}
-            onClick={() => helpers.mutateRow({
-              id: row.id,
-              optimistic: { active: Number(row.active) ? 0 : 1 },
-              request: () => sendJson(`/services/${row.id}/status`, "PATCH", { active: Number(row.active) ? 0 : 1 }, token),
-              successMessage: "Service status updated.",
-            })}
-          >
-            {helpers.isPending(row.id) ? "Saving..." : Number(row.active) ? "Active" : "Inactive"}
-          </button>
-        )}
-      />}
-      {activeView === "blogs" && <AdminCrud
-        id="blogs"
-        title="Blogs"
-        listPath="/admin/blogs"
-        savePath="/blogs"
-        token={token}
-        refreshKey={refreshKey}
-        setStatus={setStatus}
-        onSaved={onSaved}
-        filters={[
-          ["active", "All statuses", [["", "All statuses"], ["1", "Active"], ["0", "Inactive"]]],
-        ]}
-        keys={["title", "image_url", "excerpt", "active", "created_at"]}
-        fields={[
-          ["title", "Title", "text", true],
-          ["imageUrl", "Blog Image", "image", true],
-          ["excerpt", "Excerpt", "textarea", true],
-          ["content", "Full Content", "textarea"],
-          ["active", "Status", "status"],
-        ]}
-        mapEdit={(row) => ({
-          title: row.title,
-          imageUrl: row.image_url,
-          excerpt: row.excerpt,
-          content: row.content,
-          active: Number(row.active ?? 1),
-        })}
-      />}
-      {activeView === "testimonials" && <AdminCrud
-        id="testimonials"
-        title="Testimonials"
-        listPath="/admin/testimonials"
-        savePath="/testimonials"
-        token={token}
-        refreshKey={refreshKey}
-        setStatus={setStatus}
-        onSaved={onSaved}
-        filters={[
-          ["active", "All statuses", [["", "All statuses"], ["1", "Active"], ["0", "Inactive"]]],
-        ]}
-        keys={["name", "company", "designation", "rating", "active", "display_order"]}
-        fields={[
-          ["name", "Client Name", "text", true],
-          ["company", "Company", "text"],
-          ["designation", "Designation", "text"],
-          ["videoUrl", "YouTube Shorts URL", "url", true],
-          ["profileImage", "Profile Image", "image"],
-          ["rating", "Rating", "rating", true],
-          ["displayOrder", "Display Order", "number"],
-          ["status", "Status", "testimonialStatus"],
-          ["review", "Review", "textarea"],
-        ]}
-        mapEdit={(row) => ({
-          name: row.name,
-          company: row.company,
-          designation: row.designation,
-          videoUrl: row.video_url,
-          profileImage: row.profile_image || row.logo_url,
-          rating: row.rating || 5,
-          displayOrder: row.display_order || 0,
-          status: Number(row.active ?? 1) === 0 ? "inactive" : "active",
-          review: row.review,
-        })}
-      />}
-      {activeView === "leads" && <AdminList
-        id="leads"
-        title="Recent Leads"
-        path="/leads"
-        token={token}
-        refreshKey={refreshKey}
-        setStatus={setStatus}
-        onSaved={onSaved}
-        filters={[
-          ["status", "All lead statuses", [["", "All lead statuses"], ["new", "New"], ["contacted", "Contacted"], ["qualified", "Qualified"], ["closed", "Closed"]]],
-        ]}
-        keys={["name", "email", "phone", "service", "status", "is_read", "created_at"]}
-        actions={(row, helpers) => (
-          <>
+      {activeView === "services" && (
+        <AdminCrud
+          id="services"
+          title="Services"
+          listPath="/admin/services"
+          savePath="/services"
+          token={token}
+          refreshKey={refreshKey}
+          setStatus={setStatus}
+          onSaved={onSaved}
+          filters={[
+            [
+              "active",
+              "All statuses",
+              [
+                ["", "All statuses"],
+                ["1", "Active"],
+                ["0", "Inactive"],
+              ],
+            ],
+          ]}
+          keys={["name", "description", "active", "created_at"]}
+          fields={[
+            ["name", "Service Name", "text", true],
+            ["logoUrl", "Service Image", "image", true],
+            ["description", "Description", "textarea", true],
+            ["active", "Status", "status"],
+          ]}
+          mapEdit={(row) => ({
+            name: row.name,
+            logoUrl: row.logo_url,
+            description: row.description,
+            active: Number(row.active ?? 1),
+          })}
+          actions={(row, helpers) => (
+            <button
+              type="button"
+              className="admin-toggle"
+              aria-pressed={Boolean(Number(row.active))}
+              disabled={helpers.isPending(row.id)}
+              onClick={() =>
+                helpers.mutateRow({
+                  id: row.id,
+                  optimistic: { active: Number(row.active) ? 0 : 1 },
+                  request: () =>
+                    sendJson(
+                      `/services/${row.id}/status`,
+                      "PATCH",
+                      { active: Number(row.active) ? 0 : 1 },
+                      token,
+                    ),
+                  successMessage: "Service status updated.",
+                })
+              }
+            >
+              {helpers.isPending(row.id)
+                ? "Saving..."
+                : Number(row.active)
+                  ? "Active"
+                  : "Inactive"}
+            </button>
+          )}
+        />
+      )}
+      {activeView === "blogs" && (
+        <AdminCrud
+          id="blogs"
+          title="Blogs"
+          listPath="/admin/blogs"
+          savePath="/blogs"
+          token={token}
+          refreshKey={refreshKey}
+          setStatus={setStatus}
+          onSaved={onSaved}
+          filters={[
+            [
+              "active",
+              "All statuses",
+              [
+                ["", "All statuses"],
+                ["1", "Active"],
+                ["0", "Inactive"],
+              ],
+            ],
+          ]}
+          keys={["title", "image_url", "excerpt", "active", "created_at"]}
+          fields={[
+            ["title", "Title", "text", true],
+            ["imageUrl", "Blog Image", "image", true],
+            ["excerpt", "Excerpt", "textarea", true],
+            ["content", "Full Content", "textarea"],
+            ["active", "Status", "status"],
+          ]}
+          mapEdit={(row) => ({
+            title: row.title,
+            imageUrl: row.image_url,
+            excerpt: row.excerpt,
+            content: row.content,
+            active: Number(row.active ?? 1),
+          })}
+        />
+      )}
+      {activeView === "testimonials" && (
+        <AdminCrud
+          id="testimonials"
+          title="Testimonials"
+          listPath="/admin/testimonials"
+          savePath="/testimonials"
+          token={token}
+          refreshKey={refreshKey}
+          setStatus={setStatus}
+          onSaved={onSaved}
+          filters={[
+            [
+              "active",
+              "All statuses",
+              [
+                ["", "All statuses"],
+                ["1", "Active"],
+                ["0", "Inactive"],
+              ],
+            ],
+          ]}
+          keys={[
+            "name",
+            "company",
+            "designation",
+            "rating",
+            "active",
+            "display_order",
+          ]}
+          fields={[
+            ["name", "Client Name", "text", true],
+            ["company", "Company", "text"],
+            ["designation", "Designation", "text"],
+            ["videoUrl", "YouTube Shorts URL", "url", true],
+            ["profileImage", "Profile Image", "image"],
+            ["rating", "Rating", "rating", true],
+            ["displayOrder", "Display Order", "number"],
+            ["status", "Status", "testimonialStatus"],
+            ["review", "Review", "textarea"],
+          ]}
+          mapEdit={(row) => ({
+            name: row.name,
+            company: row.company,
+            designation: row.designation,
+            videoUrl: row.video_url,
+            profileImage: row.profile_image || row.logo_url,
+            rating: row.rating || 5,
+            displayOrder: row.display_order || 0,
+            status: Number(row.active ?? 1) === 0 ? "inactive" : "active",
+            review: row.review,
+          })}
+        />
+      )}
+      {activeView === "leads" && (
+        <AdminList
+          id="leads"
+          title="Recent Leads"
+          path="/leads"
+          token={token}
+          refreshKey={refreshKey}
+          setStatus={setStatus}
+          onSaved={onSaved}
+          filters={[
+            [
+              "status",
+              "All lead statuses",
+              [
+                ["", "All lead statuses"],
+                ["new", "New"],
+                ["contacted", "Contacted"],
+                ["qualified", "Qualified"],
+                ["closed", "Closed"],
+              ],
+            ],
+          ]}
+          keys={[
+            "name",
+            "email",
+            "phone",
+            "service",
+            "status",
+            "is_read",
+            "created_at",
+          ]}
+          actions={(row, helpers) => (
+            <>
+              <StatusSelect
+                row={row}
+                field="status"
+                disabled={helpers.isPending(row.id)}
+                options={[
+                  ["new", "New"],
+                  ["contacted", "Contacted"],
+                  ["qualified", "Qualified"],
+                  ["closed", "Closed"],
+                ]}
+                onChange={(status) =>
+                  helpers.mutateRow({
+                    id: row.id,
+                    optimistic: { status },
+                    request: () =>
+                      sendJson(
+                        `/leads/${row.id}/status`,
+                        "PATCH",
+                        { status },
+                        token,
+                      ),
+                    successMessage: "Lead status updated.",
+                  })
+                }
+              />
+              <button
+                type="button"
+                className="btn small ghost"
+                disabled={helpers.isPending(row.id)}
+                onClick={() =>
+                  helpers.mutateRow({
+                    id: row.id,
+                    optimistic: { is_read: Number(row.is_read) ? 0 : 1 },
+                    request: () =>
+                      sendJson(
+                        `/leads/${row.id}/read`,
+                        "PATCH",
+                        { read: !Number(row.is_read) },
+                        token,
+                      ),
+                    successMessage: Number(row.is_read)
+                      ? "Contact marked unread."
+                      : "Contact marked read.",
+                  })
+                }
+              >
+                {helpers.isPending(row.id)
+                  ? "Saving..."
+                  : Number(row.is_read)
+                    ? "Unread"
+                    : "Read"}
+              </button>
+            </>
+          )}
+        />
+      )}
+      {activeView === "bookings" && (
+        <AdminList
+          id="bookings"
+          title="Latest Bookings"
+          path="/bookings"
+          token={token}
+          refreshKey={refreshKey}
+          setStatus={setStatus}
+          onSaved={onSaved}
+          filters={[
+            [
+              "status",
+              "All booking statuses",
+              [
+                ["", "All booking statuses"],
+                ["pending", "Pending"],
+                ["accepted", "Accepted"],
+                ["rejected", "Rejected"],
+              ],
+            ],
+          ]}
+          keys={[
+            "name",
+            "email",
+            "phone",
+            "service",
+            "meeting_date",
+            "meeting_time",
+            "status",
+            "created_at",
+          ]}
+          actions={(row, helpers) => (
             <StatusSelect
               row={row}
               field="status"
               disabled={helpers.isPending(row.id)}
               options={[
-                ["new", "New"],
-                ["contacted", "Contacted"],
-                ["qualified", "Qualified"],
-                ["closed", "Closed"],
+                ["pending", "Pending"],
+                ["accepted", "Accepted"],
+                ["rejected", "Rejected"],
               ]}
-              onChange={(status) => helpers.mutateRow({
-                id: row.id,
-                optimistic: { status },
-                request: () => sendJson(`/leads/${row.id}/status`, "PATCH", { status }, token),
-                successMessage: "Lead status updated.",
-              })}
+              onChange={(status) =>
+                helpers.mutateRow({
+                  id: row.id,
+                  optimistic: { status },
+                  request: () =>
+                    sendJson(
+                      `/bookings/${row.id}/status`,
+                      "PATCH",
+                      { status },
+                      token,
+                    ),
+                  successMessage: "Booking status updated.",
+                })
+              }
             />
+          )}
+        />
+      )}
+      {activeView === "reviews" && (
+        <AdminList
+          id="reviews"
+          title="Reviews"
+          path="/reviews"
+          token={token}
+          refreshKey={refreshKey}
+          setStatus={setStatus}
+          onSaved={onSaved}
+          filters={[
+            [
+              "approved",
+              "All review statuses",
+              [
+                ["", "All review statuses"],
+                ["1", "Approved"],
+                ["0", "Hidden"],
+              ],
+            ],
+          ]}
+          keys={[
+            "name",
+            "company",
+            "rating",
+            "review",
+            "approved",
+            "created_at",
+          ]}
+          actions={(row, helpers) => (
             <button
               type="button"
-              className="btn small ghost"
+              className="admin-toggle"
+              aria-pressed={Boolean(Number(row.approved))}
               disabled={helpers.isPending(row.id)}
-              onClick={() => helpers.mutateRow({
-                id: row.id,
-                optimistic: { is_read: Number(row.is_read) ? 0 : 1 },
-                request: () => sendJson(`/leads/${row.id}/read`, "PATCH", { read: !Number(row.is_read) }, token),
-                successMessage: Number(row.is_read) ? "Contact marked unread." : "Contact marked read.",
-              })}
+              onClick={() =>
+                helpers.mutateRow({
+                  id: row.id,
+                  optimistic: { approved: Number(row.approved) ? 0 : 1 },
+                  request: () =>
+                    sendJson(
+                      `/reviews/${row.id}/status`,
+                      "PATCH",
+                      { approved: Number(row.approved) ? 0 : 1 },
+                      token,
+                    ),
+                  successMessage: "Review status updated.",
+                })
+              }
             >
-              {helpers.isPending(row.id) ? "Saving..." : Number(row.is_read) ? "Unread" : "Read"}
+              {helpers.isPending(row.id)
+                ? "Saving..."
+                : Number(row.approved)
+                  ? "Approved"
+                  : "Hidden"}
             </button>
-          </>
-        )}
-      />}
-      {activeView === "bookings" && <AdminList
-        id="bookings"
-        title="Latest Bookings"
-        path="/bookings"
-        token={token}
-        refreshKey={refreshKey}
-        setStatus={setStatus}
-        onSaved={onSaved}
-        filters={[
-          ["status", "All booking statuses", [["", "All booking statuses"], ["pending", "Pending"], ["accepted", "Accepted"], ["rejected", "Rejected"]]],
-        ]}
-        keys={["name", "email", "phone", "service", "meeting_date", "meeting_time", "status", "created_at"]}
-        actions={(row, helpers) => (
-          <StatusSelect
-            row={row}
-            field="status"
-            disabled={helpers.isPending(row.id)}
-            options={[
-              ["pending", "Pending"],
-              ["accepted", "Accepted"],
-              ["rejected", "Rejected"],
-            ]}
-            onChange={(status) => helpers.mutateRow({
-              id: row.id,
-              optimistic: { status },
-              request: () => sendJson(`/bookings/${row.id}/status`, "PATCH", { status }, token),
-              successMessage: "Booking status updated.",
-            })}
-          />
-        )}
-      />}
-      {activeView === "reviews" && <AdminList
-        id="reviews"
-        title="Reviews"
-        path="/reviews"
-        token={token}
-        refreshKey={refreshKey}
-        setStatus={setStatus}
-        onSaved={onSaved}
-        filters={[
-          ["approved", "All review statuses", [["", "All review statuses"], ["1", "Approved"], ["0", "Hidden"]]],
-        ]}
-        keys={["name", "company", "rating", "review", "approved", "created_at"]}
-        actions={(row, helpers) => (
-          <button
-            type="button"
-            className="admin-toggle"
-            aria-pressed={Boolean(Number(row.approved))}
-            disabled={helpers.isPending(row.id)}
-            onClick={() => helpers.mutateRow({
-              id: row.id,
-              optimistic: { approved: Number(row.approved) ? 0 : 1 },
-              request: () => sendJson(`/reviews/${row.id}/status`, "PATCH", { approved: Number(row.approved) ? 0 : 1 }, token),
-              successMessage: "Review status updated.",
-            })}
-          >
-            {helpers.isPending(row.id) ? "Saving..." : Number(row.approved) ? "Approved" : "Hidden"}
-          </button>
-        )}
-      />}
-      {activeView === "subscribers" && <AdminList
-        id="subscribers"
-        title="Newsletter Subscribers"
-        path="/subscribers"
-        token={token}
-        refreshKey={refreshKey}
-        setStatus={setStatus}
-        onSaved={onSaved}
-        keys={["email", "created_at"]}
-      />}
-      {activeView === "partners" && <AdminList
-        id="partners"
-        title="Partner Requests"
-        path="/partners"
-        token={token}
-        refreshKey={refreshKey}
-        setStatus={setStatus}
-        onSaved={onSaved}
-        filters={[
-          ["status", "All partner statuses", [["", "All partner statuses"], ["pending", "Pending"], ["approved", "Approved"], ["rejected", "Rejected"]]],
-        ]}
-        keys={["name", "email", "phone", "company", "service", "status", "created_at"]}
-        actions={(row, helpers) => (
-          <StatusSelect
-            row={row}
-            field="status"
-            disabled={helpers.isPending(row.id)}
-            options={[
-              ["pending", "Pending"],
-              ["approved", "Approved"],
-              ["rejected", "Rejected"],
-            ]}
-            onChange={(status) => helpers.mutateRow({
-              id: row.id,
-              optimistic: { status },
-              request: () => sendJson(`/partners/${row.id}/status`, "PATCH", { status }, token),
-              successMessage: "Partner status updated.",
-            })}
-          />
-        )}
-      />}
-      {activeView === "settings" && <section id="settings" className="admin-panel">
-        <div className="admin-section-heading">
-          <h2>Settings</h2>
-          <span>Production API</span>
-        </div>
-        <p className="admin-muted">Connected to {API}. Authentication uses short-lived admin JWTs and all admin requests use the shared API helper.</p>
-      </section>}
+          )}
+        />
+      )}
+      {activeView === "subscribers" && (
+        <AdminList
+          id="subscribers"
+          title="Newsletter Subscribers"
+          path="/subscribers"
+          token={token}
+          refreshKey={refreshKey}
+          setStatus={setStatus}
+          onSaved={onSaved}
+          keys={["email", "created_at"]}
+        />
+      )}
+      {activeView === "partners" && (
+        <AdminList
+          id="partners"
+          title="Partner Requests"
+          path="/partners"
+          token={token}
+          refreshKey={refreshKey}
+          setStatus={setStatus}
+          onSaved={onSaved}
+          filters={[
+            [
+              "status",
+              "All partner statuses",
+              [
+                ["", "All partner statuses"],
+                ["pending", "Pending"],
+                ["approved", "Approved"],
+                ["rejected", "Rejected"],
+              ],
+            ],
+          ]}
+          keys={[
+            "name",
+            "email",
+            "phone",
+            "company",
+            "service",
+            "status",
+            "created_at",
+          ]}
+          actions={(row, helpers) => (
+            <StatusSelect
+              row={row}
+              field="status"
+              disabled={helpers.isPending(row.id)}
+              options={[
+                ["pending", "Pending"],
+                ["approved", "Approved"],
+                ["rejected", "Rejected"],
+              ]}
+              onChange={(status) =>
+                helpers.mutateRow({
+                  id: row.id,
+                  optimistic: { status },
+                  request: () =>
+                    sendJson(
+                      `/partners/${row.id}/status`,
+                      "PATCH",
+                      { status },
+                      token,
+                    ),
+                  successMessage: "Partner status updated.",
+                })
+              }
+            />
+          )}
+        />
+      )}
+      {activeView === "settings" && (
+        <section id="settings" className="admin-panel">
+          <div className="admin-section-heading">
+            <h2>Settings</h2>
+            <span>Production API</span>
+          </div>
+          <p className="admin-muted">
+            Connected to {API}. Authentication uses short-lived admin JWTs and
+            all admin requests use the shared API helper.
+          </p>
+        </section>
+      )}
     </div>
   );
 }
@@ -2571,7 +2938,14 @@ function AdminCrud({
     <section id={id} className="admin-panel">
       <div className="admin-section-heading">
         <h2>{title}</h2>
-        <button type="button" className="btn small" onClick={() => { setEditing(null); setModalOpen(true); }}>
+        <button
+          type="button"
+          className="btn small"
+          onClick={() => {
+            setEditing(null);
+            setModalOpen(true);
+          }}
+        >
           Create
         </button>
       </div>
@@ -2580,11 +2954,22 @@ function AdminCrud({
           <div>
             <div className="admin-section-heading">
               <h2>{editing ? `Edit ${title}` : `Create ${title}`}</h2>
-              <button type="button" className="btn small ghost" onClick={() => { setEditing(null); setModalOpen(false); }}>
+              <button
+                type="button"
+                className="btn small ghost"
+                onClick={() => {
+                  setEditing(null);
+                  setModalOpen(false);
+                }}
+              >
                 Close
               </button>
             </div>
-            <form key={editing?.id || `new-${title}`} className="video-testimonial-form" onSubmit={submit}>
+            <form
+              key={editing?.id || `new-${title}`}
+              className="video-testimonial-form"
+              onSubmit={submit}
+            >
               {fields.map(([name, label, type, required]) => (
                 <AdminField
                   key={name}
@@ -2596,7 +2981,11 @@ function AdminCrud({
                 />
               ))}
               <button className="btn small" disabled={saving}>
-                {saving ? "Saving..." : editing ? `Update ${title}` : `Save ${title}`}
+                {saving
+                  ? "Saving..."
+                  : editing
+                    ? `Update ${title}`
+                    : `Save ${title}`}
               </button>
             </form>
           </div>
@@ -2612,7 +3001,10 @@ function AdminCrud({
         onSaved={onSaved}
         keys={keys}
         filters={filters}
-        onEdit={(row) => { setEditing(row); setModalOpen(true); }}
+        onEdit={(row) => {
+          setEditing(row);
+          setModalOpen(true);
+        }}
         actions={actions}
         compact
       />
@@ -2622,7 +3014,14 @@ function AdminCrud({
 
 function AdminField({ name, label, type = "text", required, value = "" }) {
   if (type === "textarea") {
-    return <textarea name={name} required={required} placeholder={label} defaultValue={value || ""} />;
+    return (
+      <textarea
+        name={name}
+        required={required}
+        placeholder={label}
+        defaultValue={value || ""}
+      />
+    );
   }
   if (type === "status") {
     return (
@@ -2644,7 +3043,9 @@ function AdminField({ name, label, type = "text", required, value = "" }) {
     return (
       <select name={name} required={required} defaultValue={String(value || 5)}>
         {[5, 4, 3, 2, 1].map((rating) => (
-          <option key={rating} value={rating}>{rating}</option>
+          <option key={rating} value={rating}>
+            {rating}
+          </option>
         ))}
       </select>
     );
@@ -2699,21 +3100,30 @@ function AdminList({
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ page: 1, pages: 1, total: 0, limit: 10 });
   const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState(() => Object.fromEntries(filters.map(([key]) => [key, ""])));
+  const [filterValues, setFilterValues] = useState(() =>
+    Object.fromEntries(filters.map(([key]) => [key, ""])),
+  );
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [pendingRows, setPendingRows] = useState({});
 
-  const loadRows = async (nextPage = page, nextFilters = filterValues, nextSearch = search) => {
+  const loadRows = async (
+    nextPage = page,
+    nextFilters = filterValues,
+    nextSearch = search,
+  ) => {
     setLoading(true);
     try {
-      const data = await getJson(buildAdminPath(path, {
-        ...params,
-        ...nextFilters,
-        search: nextSearch,
-        page: nextPage,
-        limit: 10,
-      }), token);
+      const data = await getJson(
+        buildAdminPath(path, {
+          ...params,
+          ...nextFilters,
+          search: nextSearch,
+          page: nextPage,
+          limit: 10,
+        }),
+        token,
+      );
       setRows(rowsFrom(data));
       setMeta(metaFrom(data));
     } catch (error) {
@@ -2746,22 +3156,25 @@ function AdminList({
     const previous = rows.find((row) => row.id === id);
     if (!id || !previous) return;
     setPendingRows((current) => ({ ...current, [id]: true }));
-    setRows((current) => current.map((row) => (
-      row.id === id ? { ...row, ...optimistic } : row
-    )));
+    setRows((current) =>
+      current.map((row) => (row.id === id ? { ...row, ...optimistic } : row)),
+    );
     try {
       const result = await request();
-      const updated = result?.data && typeof result.data === "object" ? result.data : null;
+      const updated =
+        result?.data && typeof result.data === "object" ? result.data : null;
       if (updated) {
-        setRows((current) => current.map((row) => (
-          row.id === id ? { ...row, ...updated } : row
-        )));
+        setRows((current) =>
+          current.map((row) => (row.id === id ? { ...row, ...updated } : row)),
+        );
       }
       setStatus(successMessage || "Record updated successfully.");
       await loadRows(page);
       await onSaved?.();
     } catch (error) {
-      setRows((current) => current.map((row) => (row.id === id ? previous : row)));
+      setRows((current) =>
+        current.map((row) => (row.id === id ? previous : row)),
+      );
       setStatus(error?.message || "Could not update record.");
     } finally {
       setPendingRows((current) => {
@@ -2801,18 +3214,30 @@ function AdminList({
             value={filterValues[key] || ""}
             aria-label={label}
             onChange={(event) => {
-              const nextFilters = { ...filterValues, [key]: event.target.value };
+              const nextFilters = {
+                ...filterValues,
+                [key]: event.target.value,
+              };
               setFilterValues(nextFilters);
               setPage(1);
               loadRows(1, nextFilters);
             }}
           >
             {options.map(([value, optionLabel]) => (
-              <option key={value || "all"} value={value}>{optionLabel}</option>
+              <option key={value || "all"} value={value}>
+                {optionLabel}
+              </option>
             ))}
           </select>
         ))}
-        <button type="button" className="btn small ghost" onClick={() => { setPage(1); loadRows(1, filterValues); }}>
+        <button
+          type="button"
+          className="btn small ghost"
+          onClick={() => {
+            setPage(1);
+            loadRows(1, filterValues);
+          }}
+        >
           Search
         </button>
       </div>
@@ -2823,16 +3248,25 @@ function AdminList({
         onEditRow={onEdit}
         onDeleteRow={deleteRow}
         isRowPending={(id) => Boolean(pendingRows[id])}
-        extraActions={actions ? (row) => actions(row, {
-          reload: () => loadRows(page),
-          mutateRow,
-          isPending: (id) => Boolean(pendingRows[id]),
-        }) : null}
+        extraActions={
+          actions
+            ? (row) =>
+                actions(row, {
+                  reload: () => loadRows(page),
+                  mutateRow,
+                  isPending: (id) => Boolean(pendingRows[id]),
+                })
+            : null
+        }
       />
-      <Pagination meta={meta} page={page} onPage={(nextPage) => {
-        setPage(nextPage);
-        loadRows(nextPage, filterValues);
-      }} />
+      <Pagination
+        meta={meta}
+        page={page}
+        onPage={(nextPage) => {
+          setPage(nextPage);
+          loadRows(nextPage, filterValues);
+        }}
+      />
     </section>
   );
 }
@@ -2850,11 +3284,23 @@ function Pagination({ meta, page, onPage }) {
   if (pages <= 1) return null;
   return (
     <div className="admin-pagination">
-      <button type="button" className="btn small ghost" disabled={page <= 1} onClick={() => onPage(page - 1)}>
+      <button
+        type="button"
+        className="btn small ghost"
+        disabled={page <= 1}
+        onClick={() => onPage(page - 1)}
+      >
         Previous
       </button>
-      <span>Page {page} of {pages}</span>
-      <button type="button" className="btn small ghost" disabled={page >= pages} onClick={() => onPage(page + 1)}>
+      <span>
+        Page {page} of {pages}
+      </span>
+      <button
+        type="button"
+        className="btn small ghost"
+        disabled={page >= pages}
+        onClick={() => onPage(page + 1)}
+      >
         Next
       </button>
     </div>
@@ -2875,13 +3321,22 @@ function StatusSelect({ row, field, options, disabled, onChange }) {
       }}
     >
       {options.map(([optionValue, label]) => (
-        <option key={optionValue} value={optionValue}>{disabled ? `${label}...` : label}</option>
+        <option key={optionValue} value={optionValue}>
+          {disabled ? `${label}...` : label}
+        </option>
       ))}
     </select>
   );
 }
 
-function DataTable({ rows, keys, onDeleteRow, onEditRow, extraActions, isRowPending = () => false }) {
+function DataTable({
+  rows,
+  keys,
+  onDeleteRow,
+  onEditRow,
+  extraActions,
+  isRowPending = () => false,
+}) {
   return (
     <div className="data-table">
       <table>
@@ -2931,7 +3386,12 @@ function DataTable({ rows, keys, onDeleteRow, onEditRow, extraActions, isRowPend
             ))
           ) : (
             <tr>
-              <td colSpan={keys.length + (onEditRow || onDeleteRow || extraActions ? 1 : 0)}>
+              <td
+                colSpan={
+                  keys.length +
+                  (onEditRow || onDeleteRow || extraActions ? 1 : 0)
+                }
+              >
                 No records yet.
               </td>
             </tr>
@@ -2952,6 +3412,9 @@ function Icon({ name }) {
 
 function Footer() {
   const [newsletterStatus, setNewsletterStatus] = useState("");
+  const scrollToPageTop = () => {
+    setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "smooth" }), 0);
+  };
   const subscribe = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -2976,18 +3439,22 @@ function Footer() {
         </div>
         <div>
           <h4>Quick Links</h4>
-          <a href="#/">Home</a>
-          <a href="#/services/whatsapp-official-api">Services</a>
-          <a href="#/become-a-partner">Become a Partner</a>
-          <a href="#/contact">Contact</a>
-          <a href="#/admin">Admin</a>
-          <a href="#/privacy-policy">Privacy Policy</a>
-          <a href="#/terms-and-conditions">Terms & Conditions</a>
+          <a href="#/" onClick={scrollToPageTop}>Home</a>
+          <a href="#/services/whatsapp-official-api" onClick={scrollToPageTop}>Services</a>
+          <a href="#/become-a-partner" onClick={scrollToPageTop}>Become a Partner</a>
+          <a href="#/contact" onClick={scrollToPageTop}>Contact</a>
+          <a href="#/admin" onClick={scrollToPageTop}>Admin</a>
+          <a href="#/privacy-policy" onClick={scrollToPageTop}>Privacy Policy</a>
+          <a href="#/terms-and-conditions" onClick={scrollToPageTop}>Terms & Conditions</a>
         </div>
         <div>
           <h4>Services</h4>
           {serviceDetails.map((service) => (
-            <a key={service.slug} href={`#/services/${service.slug}`}>
+            <a
+              key={service.slug}
+              href={`#/services/${service.slug}`}
+              onClick={scrollToPageTop}
+            >
               {service.name}
             </a>
           ))}
@@ -3004,15 +3471,36 @@ function Footer() {
             Jaipur, Rajasthan
           </p>
           <form className="newsletter" onSubmit={subscribe}>
-            <input name="email" type="email" required placeholder="Email address" />
+            <input
+              name="email"
+              type="email"
+              required
+              placeholder="Email address"
+            />
             <button>Subscribe</button>
           </form>
-          {newsletterStatus && <p className="form-status">{newsletterStatus}</p>}
-          <div className="socials">
-            <span>f</span>
-            <span>ig</span>
-            <span>in</span>
-            <span>yt</span>
+          {newsletterStatus && (
+            <p className="form-status">{newsletterStatus}</p>
+          )}
+          <div className="socials" aria-label="Social media links">
+            <a
+              href="https://www.facebook.com/share/1DJbvS51jy/"
+              aria-label="Facebook"
+            >
+              <img src="/images/social/facebook.svg" alt="" loading="lazy" />
+            </a>
+            <a
+              href="https://www.instagram.com/invites/contact/?utm_source=ig_contact_invite&utm_medium=copy_link&utm_content=n09erhm"
+              aria-label="Instagram"
+            >
+              <img src="/images/social/instagram.svg" alt="" loading="lazy" />
+            </a>
+            <a
+              href="https://youtube.com/@digisky23?si=dnlzyxhPh2jeXp0P"
+              aria-label="YouTube"
+            >
+              <img src="/images/social/youtube.svg" alt="" loading="lazy" />
+            </a>
           </div>
         </div>
       </div>
@@ -3024,7 +3512,10 @@ function Footer() {
 function FloatingButtons() {
   return (
     <div className="floating">
-      <a href={`https://wa.me/${WHATSAPP_PHONE_LINK}`} aria-label="Chat now on WhatsApp">
+      <a
+        href={`https://wa.me/${WHATSAPP_PHONE_LINK}`}
+        aria-label="Chat now on WhatsApp"
+      >
         <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
           <path d="M16.04 4C9.42 4 4.04 9.36 4.04 15.96c0 2.1.56 4.16 1.62 5.96L4 28l6.24-1.62a11.96 11.96 0 0 0 5.8 1.48C22.64 27.86 28 22.5 28 15.9 28 9.34 22.64 4 16.04 4Zm0 21.82c-1.78 0-3.52-.48-5.02-1.38l-.36-.22-3.7.96.98-3.58-.24-.38a9.83 9.83 0 0 1-1.5-5.26c0-5.46 4.42-9.9 9.86-9.9 5.42 0 9.84 4.42 9.84 9.84 0 5.48-4.42 9.92-9.86 9.92Zm5.4-7.4c-.3-.16-1.76-.88-2.04-.98-.28-.1-.48-.16-.68.16-.2.3-.78.98-.96 1.18-.18.2-.36.22-.66.08-.3-.16-1.26-.46-2.4-1.48-.88-.78-1.48-1.76-1.66-2.06-.18-.3-.02-.46.14-.62.14-.14.3-.36.46-.54.16-.18.2-.3.3-.5.1-.2.04-.38-.02-.54-.08-.16-.68-1.64-.94-2.24-.24-.58-.5-.5-.68-.5h-.58c-.2 0-.52.08-.8.38-.28.3-1.06 1.04-1.06 2.54s1.1 2.96 1.26 3.16c.16.2 2.16 3.3 5.24 4.62.74.32 1.3.5 1.76.64.74.24 1.4.2 1.94.12.6-.1 1.76-.72 2-1.42.24-.7.24-1.3.18-1.42-.08-.12-.28-.2-.58-.36Z" />
         </svg>

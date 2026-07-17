@@ -941,7 +941,7 @@ li::before {
 
 .logo-slider {
   display: flex;
-  gap: 34px;
+  gap: 38px;
   width: max-content;
   animation: logoSlide 28s linear infinite;
 }
@@ -951,61 +951,71 @@ li::before {
 }
 
 .logo-slider .logo-item {
-  display: grid;
-  min-width: 118px;
-  place-items: center;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  width: 126px;
+  min-height: 174px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
   color: var(--primary);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 900;
+  line-height: 1.2;
   text-align: center;
-  background: transparent;
+  flex: 0 0 126px;
   opacity: 0;
   transform: translateY(12px);
   animation: fadeUp 0.8s ease both;
+}
+
+.logo-slider .logo-frame {
+  display: flex;
+  width: 126px;
+  height: 126px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid rgba(127, 146, 176, 0.24);
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 16px 42px rgba(10, 37, 64, 0.08);
   transition:
     transform 0.22s ease,
     border-color 0.22s ease,
     box-shadow 0.22s ease;
 }
 
-.logo-slider .logo-bubble {
-  display: grid;
-  width: 92px;
-  height: 92px;
-  place-items: center;
-  border: 4px solid #ffffff;
+.logo-slider .logo-image {
+  display: block;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
-  color: #ffffff;
-  font-size: 24px;
-  font-weight: 900;
-  letter-spacing: 0;
-  background:
-    radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.36), transparent 30%),
-    linear-gradient(135deg, #456de6 0%, #254fc8 58%, #173aa4 100%);
-  box-shadow:
-    inset 0 0 0 2px rgba(219, 230, 255, 0.92),
-    0 14px 38px rgba(69, 109, 230, 0.18);
-  transition:
-    transform 0.22s ease,
-    border-color 0.22s ease,
-    box-shadow 0.22s ease;
+  object-fit: contain;
 }
 
 .logo-slider .logo-name {
-  max-width: 118px;
+  display: block;
+  width: 126px;
+  min-height: 36px;
   color: var(--primary);
-  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
-.logo-slider .logo-item:hover .logo-bubble {
+.logo-slider .logo-item:hover .logo-frame {
   border-color: rgba(0, 102, 255, 0.28);
   transform: translateY(-5px) scale(1.04);
   box-shadow: var(--shadow);
 }
 
+.dark .logo-slider .logo-frame {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.94);
+}
+
 .dark .logo-slider .logo-name {
-  color: #fff;
+  color: #ffffff;
 }
 
 @keyframes logoSlide {
@@ -1758,19 +1768,32 @@ footer p {
 
 .socials {
   display: flex;
-  gap: 9px;
+  gap: 10px;
   margin-top: 18px;
 }
 
-.socials span {
+.socials a {
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   place-items: center;
+  margin: 0;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
-  font-size: 12px;
-  font-weight: 900;
+  background: rgba(255, 255, 255, 0.14);
+  transition:
+    background 0.22s ease,
+    transform 0.22s ease;
+}
+
+.socials a:hover {
+  background: rgba(255, 255, 255, 0.24);
+  transform: translateY(-2px);
+}
+
+.socials img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 
 .bottom {
@@ -2168,13 +2191,23 @@ footer p {
   }
 
   .logo-slider {
-    gap: 24px;
+    gap: 28px;
   }
 
-  .logo-slider .logo-bubble {
-    width: 76px;
-    height: 76px;
-    font-size: 20px;
+  .logo-slider .logo-item {
+    width: 104px;
+    min-height: 150px;
+    flex-basis: 104px;
+    font-size: 12px;
+  }
+
+  .logo-slider .logo-frame {
+    width: 104px;
+    height: 104px;
+  }
+
+  .logo-slider .logo-name {
+    width: 104px;
   }
 
   .newsletter {
