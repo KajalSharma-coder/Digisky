@@ -3490,7 +3490,7 @@ function Footer() {
               <img src="/images/social/facebook.svg" alt="" loading="lazy" />
             </a>
             <a
-              href="https://www.instagram.com/invites/contact/?utm_source=ig_contact_invite&utm_medium=copy_link&utm_content=n09erhm"
+              href="https://www.instagram.com/digiskyofficial?igsh=dXo3djUyYmRzcm45"
               aria-label="Instagram"
             >
               <img src="/images/social/instagram.svg" alt="" loading="lazy" />
